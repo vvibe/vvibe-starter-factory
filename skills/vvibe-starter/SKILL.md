@@ -45,7 +45,10 @@ Does **not**:
 Run in order. Re-running is safe.
 
 ### A — Detect base app  →  `scripts/detect.mjs`
-Run `node <factory>/skills/vvibe-starter/scripts/detect.mjs <base-app-dir>`.
+Run `node <skill-dir>/scripts/detect.mjs <base-app-dir>`, where `<skill-dir>` is the
+folder containing **this** SKILL.md — e.g. `~/.claude/skills/vvibe-starter` when the
+skill is installed, or `skills/vvibe-starter` if you're running from a clone of the
+factory repo. (The `scripts/` and `references/` folders sit next to this file.)
 It is read-only and prints a done/pending checklist: detected stack (expect
 Next.js App Router), presence of `AGENTS.md`/`CLAUDE.md`, whether the two skill
 packs are already vendored, whether the marker block and forker playbook already
@@ -68,14 +71,14 @@ All credential-less: code reads from env; you ship `.env.example` placeholders.
 Remote provisioning (create plans, connect GA) is deferred to the forker.
 
 ### D — Mark the repo vvibe-optimized  →  `scripts/write_marker.mjs` + `references/optimized-marker.md`
-Run `node <factory>/.../scripts/write_marker.mjs <base-app-dir>` to insert/update the
+Run `node <skill-dir>/scripts/write_marker.mjs <base-app-dir>` to insert/update the
 delimited `<!-- vvibe:start … vvibe:end -->` block in the starter's `AGENTS.md`
 (and `CLAUDE.md` if it exists; creates `AGENTS.md` if neither). It declares the
 project vvibe-optimized, lists installed skills + what each does, and tells future
 agents to operate the business via them and run the forker playbook. Idempotent.
 
 ### E — Embed the forker registration playbook  →  `scripts/write_playbook.mjs` + `references/forker-playbook.md` + `references/env-templates.md`
-Run `node <factory>/.../scripts/write_playbook.mjs <base-app-dir>`. It writes into the
+Run `node <skill-dir>/scripts/write_playbook.mjs <base-app-dir>`. It writes into the
 starter: `VVIBE_STARTER.md` (the forker playbook), `.env.example` (vvibe + Portaly
 placeholders), and `.mcp.json` (placeholder MCP server entry — **no real token**).
 The playbook walks the forker's agent through: register VVibe at https://vvibe.ai →

@@ -33,6 +33,9 @@ Entry point: [`skills/vvibe-starter/SKILL.md`](skills/vvibe-starter/SKILL.md).
 It is a router — read it fully, then read only the `references/*.md` it sends you
 to for the phase you're in. Phases A–F are ordered, idempotent, and resumable.
 
+Human operators: see the README → **How internal staff use this** for install +
+invocation steps (install globally; never let this skill leak into a base app).
+
 ## Key fact you must internalize
 
 VVibe (and Portaly) registration **cannot** be done through MCP — MCP auth needs
