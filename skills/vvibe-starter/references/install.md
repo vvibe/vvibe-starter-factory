@@ -6,42 +6,45 @@ forks the starter gets the skills without a separate install step.
 ## Install target — read this first
 
 `npx skills` is the **vercel-labs/skills** CLI. Its **default** (no flags) installs
-to `./.agents/skills/<skill>/` (project) or `~/.agents/skills/<skill>/` (`-g`), and
-relies on a symlink into `.claude/skills/` that frequently isn't created (open issues
-vercel-labs/skills #744, #851, #1355) and is unreliable on Windows.
+to `.agents/skills/` and relies on a per-agent symlink that frequently isn't created
+(open issues vercel-labs/skills #744, #851, #1355) and is unreliable on Windows. Use
+`--copy` for real files.
 
-A starter must (a) carry the skills inside the repo and (b) be discoverable the
-instant a fork is opened in Claude Code. So **do not use the default** — use the
-`--copy` + `-a claude-code` flags, which (verified) write **real files directly into
-`<repo>/.claude/skills/<name>/`** with no `.agents/skills/` leftover and no symlink.
+For a **cross-agent** starter, vendor the packs into **two** clean dirs:
+- `.claude/skills/<name>/` — Claude Code auto-discovers these.
+- `.agents/skills/<name>/` — the cross-agent canonical location other agents read, and
+  what the `AGENTS.md` marker points Codex (which has no skills-dir) at.
 
-## Vendor the packs into `<repo>/.claude/skills/`
+## Vendor the packs (cross-agent)
 
-Run from the **base app** root. Preferred — let the CLI copy real files into place:
+Run from the **base app** root.
 
 ```bash
-# real files copied straight into ./.claude/skills/<name>/ ; writes skills-lock.json
-npx skills add vvibe/vvibe-skills      -a claude-code --copy -y
+# real files into ./.claude/skills/<name>/ ; writes skills-lock.json
+npx skills add vvibe/vvibe-skills        -a claude-code --copy -y
 npx skills add portaly-ai/portaly-skills -a claude-code --copy -y
+# mirror into the cross-agent canonical dir so Codex/others can find them
+mkdir -p .agents/skills && cp -R .claude/skills/* .agents/skills/
 ```
 
 - `--copy` = real files, not a symlink (Windows-safe, survives a fork).
-- `-a claude-code` = target Claude Code's `.claude/skills/` (use `-a '*'` to also
-  populate other agents' dirs).
-- add `-s <name>` to pin a subset; default is all skills in the repo.
-- a `skills-lock.json` is written at the repo root — commit it too.
+- `-s <name>` pins a subset; default is all skills in the repo.
+- Want **every** agent's own dir populated (Cursor, Windsurf, Goose, … ~70 of them)?
+  Use `-a '*' --copy -y` instead — but it adds ~70 per-agent dirs to the repo, heavy
+  for a forkable starter. The two-dir approach above already covers Claude (auto) +
+  everything else (via `.agents/skills` + the marker).
 
-Fallback if the CLI is unavailable — copy straight from source:
+Fallback if the CLI is unavailable — copy straight from source into both dirs:
 ```bash
 git clone --depth 1 https://github.com/vvibe/vvibe-skills /tmp/vs
 git clone --depth 1 https://github.com/portaly-ai/portaly-skills /tmp/ps
-mkdir -p .claude/skills
-cp -R /tmp/vs/skills/* .claude/skills/
-cp -R /tmp/ps/skills/* .claude/skills/
+mkdir -p .claude/skills .agents/skills
+cp -R /tmp/vs/skills/* /tmp/ps/skills/* .claude/skills/
+cp -R .claude/skills/* .agents/skills/
 ```
 
 For the showcase you need at minimum `vvibe-analytics` + (`portaly-payment` and/or
-`portaly-product`); shipping the full set is recommended so the forker sees the
+`portaly-product`); shipping the full set is recommended so the user sees the
 whole surface.
 
 ## Heads-up: the permission wall on the 2nd-party (Portaly) repo
@@ -59,25 +62,21 @@ If you hit this:
   present. So a Portaly-less run still produces a coherent (analytics-only) starter;
   just don't claim a checkout showcase that you couldn't wire.
 
-## Heads-up: the interim `.agents/skills` line in the CLI output
-
-Mid-run the CLI's summary panel may print an `.agents/skills/<name>` path even with
-`--copy`. Ignore it — the **final** state with `--copy -a claude-code` is real files
-in `.claude/skills/` and no `.agents/skills/` left behind (verify with `ls` after).
-
 ## Commit them (so forks carry the skills)
 
-1. Confirm `.gitignore` does **not** exclude `.claude/skills/`. If a blanket
-   `.claude/` rule exists, add a negation:
+1. Confirm `.gitignore` doesn't exclude `.claude/skills/` or `.agents/skills/`. If a
+   blanket `.claude/` (or `.agents/`) rule exists, add negations:
    ```gitignore
    # keep the pre-installed vvibe + portaly skills in the starter
    !.claude/skills/
    !.claude/skills/**
+   !.agents/skills/
+   !.agents/skills/**
    ```
-2. Stage and commit (include the lockfile):
+2. Stage and commit (both skill dirs + the lockfile):
    ```bash
-   git add .claude/skills/ skills-lock.json
-   git commit -m "chore: pre-install vvibe + portaly skill catalogs"
+   git add .claude/skills/ .agents/skills/ skills-lock.json
+   git commit -m "chore: pre-install vvibe + portaly skill catalogs (cross-agent)"
    ```
 
 ## Record what was installed

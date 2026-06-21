@@ -18,7 +18,9 @@ const END = '<!-- vvibe:end -->'
 // `.agents/skills` is where the vercel-labs `skills` CLI installs by default.
 const SKILL_DIRS = ['.claude/skills', '.agents/skills']
 const presentDirs = SKILL_DIRS.filter((d) => fs.existsSync(path.join(root, d)))
-const skillsLabel = presentDirs[0] || '.claude/skills'
+const skillsLabel = presentDirs.length
+  ? presentDirs.map((d) => `\`${d}/\``).join(' and ')
+  : '`.claude/skills/`'
 const installed = [
   ...new Set(
     presentDirs.flatMap((d) => {
@@ -60,8 +62,11 @@ This starter ships with the ${stackLine} pre-installed.
 If you're an AI agent working in this repo, you can operate the creator's business
 (${capabilities}) through these skills.
 
-**Pre-installed skills** (in \`${skillsLabel}/\`):
+**Pre-installed skills** (in ${skillsLabel}):
 ${skillLines}
+
+If your agent doesn't auto-discover skills (e.g. **Codex**), read the relevant
+\`SKILL.md\` in those folders when doing related work.
 
 **Showcase already wired:** ${showcaseLine}. It runs as soon as credentials are
 supplied — see **Getting started** below.

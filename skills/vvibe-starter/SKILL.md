@@ -2,14 +2,17 @@
 name: vvibe-starter
 version: 0.1.0
 manifest_version: 1
-description: INTERNAL VVibe production-line tool. Turn a team-prepared base web app into an official, vvibe-optimized starter — pre-install the vvibe + Portaly skill catalogs, wire a real working showcase integration (analytics + checkout), mark the repo vvibe-optimized, and embed a registration playbook the downstream forker's agent will run. Trigger when a VVibe operator wants to produce / build / vvibe-optimize an official starter app, run the starter factory, or install vvibe onto a base app. NOT a public creator skill — never publish to vvibe/vvibe-skills.
+description: Turn any web app into a vvibe-optimized starter — pre-install the vvibe + Portaly skill catalogs, wire a real working showcase integration (GA4 analytics + a TWD Portaly checkout), mark the repo vvibe-optimized, and embed a registration playbook the downstream user's agent will run. Trigger when someone wants to vvibe-optimize an app, add vvibe + Portaly to a project, run the starter factory, or (for the VVibe team) produce an official starter. Works across agents (Claude Code, Codex, etc.).
 ---
 
 # VVibe Starter Factory — Router
 
-You are the **production agent**. You run this once against a **base web app** to
-produce an **official vvibe-optimized starter** for the public to fork. The future
-forker is downstream and never sees this skill.
+You run this once against a **base web app** to turn it into a **vvibe-optimized
+starter**: vvibe + Portaly pre-installed, a working showcase wired, and a playbook
+that walks the downstream user through connecting their own accounts. (When the VVibe
+team runs it on a curated base app, the result is an *official* starter — but the tool
+itself is public and works on any app.) The downstream user is who runs the embedded
+playbook later; they don't need this factory skill.
 
 This file is a router. Read it fully, then read only the `references/*.md` for the
 phase you are in. Do not paste reference detail back into here.
@@ -97,7 +100,8 @@ committed. Strip any temporary key. Only then is the starter publishable.
 - **Never** accept or write real API keys, tokens, or callback secrets into the
   starter. Placeholders only. If you used a throwaway key to smoke-test, remove it
   before finishing (phase F checks this).
-- Keep this skill private — do not publish to `vvibe/vvibe-skills`.
+- This skill is the optimizer, not part of the product — it does not need to ship
+  inside the produced starter (it's installed separately by whoever runs it).
 - Hardcode `vvibe.ai` / `portaly.cc`; note `VVIBE_API_HOST` / `PORTALY_API_HOST`
   overrides exist for self-host forks (see each catalog's `PROVIDER.md`).
 - **Currency & locale follow the payment rail.** The pre-installed showcase rail is

@@ -28,7 +28,7 @@ This starter ships with the **VVibe** + **Portaly** creator stacks pre-installed
 If you're an AI agent working in this repo, you can operate the creator's business
 (analytics, members, email, blog, payments) through these skills.
 
-**Pre-installed skills** (in `.claude/skills/`):
+**Pre-installed skills** (in `.claude/skills/` and `.agents/skills/`):
 - `vvibe-analytics` — GA4 + VVibe event tracking, connect analytics to the dashboard
 - `vvibe-member` — sync app users to VVibe
 - `vvibe-email` — invitation emails + waitlist landing
@@ -37,6 +37,9 @@ If you're an AI agent working in this repo, you can operate the creator's busine
 - `vvibe-sentry` — pre-deploy security audit
 - `portaly-payment` — subscriptions / checkout
 - `portaly-product` — sell digital products
+
+If your agent doesn't auto-discover skills (e.g. Codex), read the relevant
+`SKILL.md` in those folders when doing related work.
 
 **Showcase already wired:** analytics events + a Portaly checkout flow. It runs as
 soon as credentials are supplied — see **Getting started** below.

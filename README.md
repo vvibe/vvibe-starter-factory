@@ -1,11 +1,13 @@
 # vvibe-starter-factory
 
-> **Internal.** Not public. Not open source. Do **not** publish this repo or push
-> any of its skills to the public `vvibe/vvibe-skills` catalog.
+A one-command tool that turns **any web app into a vvibe-optimized starter**: it
+pre-installs the vvibe + Portaly skill catalogs, wires a real working showcase
+(GA4 analytics + a TWD Portaly checkout), marks the repo vvibe-optimized, and embeds
+a playbook that walks the next person through connecting their own accounts.
 
-The production line for **official VVibe starter apps**. It takes a team-prepared
-**base web app** and turns it into a published, **vvibe-optimized starter** that the
-public can fork into their own real product.
+When the **VVibe team** runs it on a curated base app, the result is an *official*
+starter the team publishes. Run on your own app, it's just a fast way to get
+vvibe + Portaly wired in. Works across agents (Claude Code, Codex, etc.).
 
 ## What's in here
 
@@ -14,76 +16,60 @@ vvibe-starter-factory/
 ├── README.md                  ← you are here
 ├── AGENTS.md                  ← guidance for the agent operating this factory
 └── skills/
-    └── vvibe-starter/         ← the factory skill (the one tool the team runs)
-        ├── SKILL.md           ← router: production-line phases A–F
+    └── vvibe-starter/         ← the skill (the one tool you run)
+        ├── SKILL.md           ← router: phases A–F
         ├── references/        ← deep-dives, loaded on demand
         └── scripts/           ← detect / write_marker / write_playbook
 ```
-
-## Who runs this
-
-A VVibe **team member's AI agent**, during the starter-app production line. The
-reader of `SKILL.md` is that production agent — **not** an end user.
 
 ## What it produces
 
 A starter app that:
 
 1. Ships both skill catalogs pre-installed (`vvibe/vvibe-skills` +
-   `portaly-ai/portaly-skills`), committed so forks carry them.
+   `portaly-ai/portaly-skills`), committed so forks carry them — vendored into
+   `.claude/skills/` **and** `.agents/skills/` so any agent (Claude Code, Codex, …)
+   can find them.
 2. Has a **real, working** vvibe + Portaly showcase integration wired in
-   (analytics events + a Portaly checkout). The code is complete and runs the
-   moment a forker supplies their own keys — there is **no demo/live account**
-   baked in.
-3. Declares itself **vvibe-optimized** in `AGENTS.md` so any future agent that
-   opens the fork knows to operate the business via these skills.
-4. Embeds a **forker registration playbook** + `.env.example` + `.mcp.json`
-   placeholder, so the downstream forker's agent can walk *them* through making
-   *their own* VVibe and Portaly accounts.
+   (analytics events + a TWD Portaly checkout). The code is complete and runs the
+   moment the user supplies their own keys — there is **no demo/live account** baked in.
+3. Declares itself **vvibe-optimized** in `AGENTS.md` (the cross-agent instructions
+   file) so any future agent that opens the fork knows to operate the business via
+   these skills.
+4. Embeds a **registration playbook** + `.env.example` + `.mcp.json` placeholder, so
+   the next person's agent can walk *them* through making *their own* VVibe and
+   Portaly accounts.
 
-## How internal staff use this
+## How to use it
 
-### One-time setup (per machine)
-
-This is a **private** repo, so `npx skills add` won't reliably fetch it. Clone it and
-copy the skill into Claude Code's **global** skills dir (`~/.claude/skills/`) — global
-so it's available in every project **and** can never be accidentally committed into a
-base app:
+### Install the skill (any agent)
 
 ```bash
-gh repo clone vvibe/vvibe-starter-factory ~/src/vvibe-starter-factory
-mkdir -p ~/.claude/skills
-cp -R ~/src/vvibe-starter-factory/skills/vvibe-starter ~/.claude/skills/
+# installs the vvibe-starter skill across your agents (Claude Code, Codex, …)
+npx skills add vvibe/vvibe-starter-factory -a '*' --copy -y
+# or just your agent, e.g.:  -a claude-code   /   -a codex
 ```
 
-(Update later with `git -C ~/src/vvibe-starter-factory pull` then re-copy.)
+Codex note: Codex has no `skills/` auto-discovery — it reads `AGENTS.md`. After
+installing, either point Codex at `~/.agents/skills/vvibe-starter/SKILL.md` and say
+"follow it", or add a one-line pointer to it in your `AGENTS.md`.
 
-### Produce a starter
+### Run it on an app
 
-1. Open the team's **base app** in Claude Code so it's the working directory.
-2. Invoke the skill: **`/vvibe-starter`**, or just tell the agent
-   *"use the vvibe-starter skill to vvibe-optimize this app."*
-3. The agent reads `SKILL.md` and runs phases **A–F** (detect → install the vvibe +
-   portaly catalogs → wire the TWD Portaly + GA4 showcase → write the vvibe-optimized
-   marker → embed the forker playbook → QA). It's idempotent and resumable — safe to
-   re-run; phase A reports what's already done.
-4. Review the diff, finish the phase-F QA (build + secret scan), then publish the
-   produced starter.
+1. Open the **base app** in your agent so it's the working directory.
+2. Invoke it: in Claude Code, **`/vvibe-starter`** (or "use the vvibe-starter skill to
+   vvibe-optimize this app"); in Codex, tell it to follow the skill's `SKILL.md`.
+3. The agent runs phases **A–F** (detect → install the vvibe + portaly catalogs → wire
+   the TWD Portaly + GA4 showcase → write the vvibe-optimized marker → embed the
+   playbook → QA). Idempotent and resumable — phase A reports what's already done.
+4. Review the diff, finish the phase-F QA (build + secret scan), then ship it.
 
-> Prefer not to install globally? Clone the repo and point the agent at
-> `skills/vvibe-starter/SKILL.md` directly, then ask it to run the phases. Same result.
-
-### ⚠️ Don't let the factory skill leak into the published starter
-
-Install `vvibe-starter` **globally** (above) — **never** into a base app's
-`.claude/skills/`. Phase B intentionally vendors the **vvibe + portaly** catalogs into
-the base app (those ship to the public); the **`vvibe-starter` factory skill must not**.
-If you ever copied it project-locally, delete `<base-app>/.claude/skills/vvibe-starter`
-before committing the starter.
+> The skill is the optimizer, not part of the product — you don't need to commit
+> `vvibe-starter` itself into the app it produces.
 
 ## Hard rule
 
-The published starter must contain **zero real credentials**. The factory wires
-*code that reads from env* and *placeholders*; registration and remote
-provisioning are the downstream forker's job (see
+The produced starter must contain **zero real credentials**. The factory wires
+*code that reads from env* and *placeholders*; registration and remote provisioning
+are the downstream user's job (see
 `skills/vvibe-starter/references/forker-playbook.md`).
