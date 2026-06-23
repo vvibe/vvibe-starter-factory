@@ -45,9 +45,10 @@ A starter app that:
 ### Install the skill (any agent)
 
 ```bash
-# installs the vvibe-starter skill across your agents (Claude Code, Codex, …)
-npx skills add vvibe/vvibe-starter-factory -a '*' --copy -y
-# or just your agent, e.g.:  -a claude-code   /   -a codex
+# install for your agent (recommended — keeps the footprint to one dir)
+npx skills add vvibe/vvibe-starter-factory -a claude-code --copy -y
+# Codex / others: swap the agent, e.g.  -a codex
+# `-a '*'` works too but writes ~70 per-agent dirs — only if you really want all of them
 ```
 
 Codex note: Codex has no `skills/` auto-discovery — it reads `AGENTS.md`. After

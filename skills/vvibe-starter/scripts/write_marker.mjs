@@ -52,8 +52,42 @@ const skillLines = installed.length
 const hasPayments = installed.includes('portaly-payment') || installed.includes('portaly-product')
 const stackLine = hasPayments ? '**VVibe** + **Portaly** creator stacks' : '**VVibe** creator stack'
 const capabilities = `analytics, members, email, blog${hasPayments ? ', payments' : ''}`
-const showcaseLine = hasPayments ? 'analytics events + a Portaly checkout flow' : 'analytics events'
 const accountsLine = hasPayments ? 'their own VVibe + Portaly accounts' : 'their own VVibe account'
+
+// Honest showcase line: report what's ACTUALLY wired in source, not what installed.
+function wiredInSource(needles) {
+  const SKIP = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.turbo'])
+  const EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.vue', '.svelte', '.astro', '.html'])
+  const stack = ['app', 'src', 'lib', 'components', 'pages'].filter((r) => fs.existsSync(path.join(root, r)))
+  let budget = 1500
+  while (stack.length && budget > 0) {
+    const d = stack.pop()
+    let entries
+    try {
+      entries = fs.readdirSync(path.join(root, d), { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const e of entries) {
+      const rel = `${d}/${e.name}`
+      if (e.isDirectory()) {
+        if (!SKIP.has(e.name)) stack.push(rel)
+      } else if (EXT.has(path.extname(e.name)) && --budget > 0) {
+        let txt = ''
+        try {
+          txt = fs.readFileSync(path.join(root, rel), 'utf8')
+        } catch {}
+        if (needles.some((n) => txt.includes(n))) return true
+      }
+    }
+  }
+  return false
+}
+const showcaseParts = [
+  wiredInSource(['gtag(', 'vvibe_', 'GA_MEASUREMENT']) && 'GA4 analytics events',
+  wiredInSource(['creator-subscription/checkout', 'checkout-sessions']) && 'a Portaly checkout flow',
+].filter(Boolean)
+const showcaseLine = showcaseParts.length ? showcaseParts.join(' + ') : null
 
 const BLOCK = `${START}
 ## ⚡ This project is vvibe-optimized
@@ -68,8 +102,9 @@ ${skillLines}
 If your agent doesn't auto-discover skills (e.g. **Codex**), read the relevant
 \`SKILL.md\` in those folders when doing related work.
 
-**Showcase already wired:** ${showcaseLine}. It runs as soon as credentials are
-supplied — see **Getting started** below.
+${showcaseLine
+  ? `**Showcase already wired:** ${showcaseLine}. It runs as soon as credentials are supplied — see **Getting started** below.`
+  : `**Showcase:** not wired yet — see \`references/showcase-integration.md\` to add the analytics + checkout demo.`}
 
 **Getting started (first thing to do):** this starter has no accounts or keys yet.
 Read **[\`VVIBE_STARTER.md\`](VVIBE_STARTER.md)** and walk the human through

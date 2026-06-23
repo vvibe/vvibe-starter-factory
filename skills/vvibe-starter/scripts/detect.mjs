@@ -66,8 +66,11 @@ const hasMcpJson = exists('.mcp.json')
 // ── Phase C — showcase wiring (heuristic sentinel scan) ──────────────────
 // Walk the source tree (skipping heavy/irrelevant dirs) for showcase fingerprints
 // so a resuming agent knows whether the integration was wired. Bounded + read-only.
+// Scan ONLY app source roots — not the repo root. The skills CLI drops pack
+// copies (with these exact sentinels in their docs) into .claude/.agents AND ~70
+// other agent dirs; scanning root false-positives. Showcase code lives in source.
 const SENTINELS = ['Powered by vvibe', 'vvibe_checkout', 'vvibe_product_view', 'creator-subscription/checkout']
-const SKIP = new Set(['node_modules', '.git', '.next', '.claude', '.agents', 'dist', 'build', '.turbo'])
+const SKIP = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.turbo'])
 const CODE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.vue', '.svelte', '.astro', '.html'])
 function scanShowcase(dir, budget = { files: 1500 }) {
   let entries
@@ -78,7 +81,7 @@ function scanShowcase(dir, budget = { files: 1500 }) {
   }
   for (const e of entries) {
     if (budget.files <= 0) return false
-    const rel = dir ? `${dir}/${e.name}` : e.name
+    const rel = `${dir}/${e.name}`
     if (e.isDirectory()) {
       if (SKIP.has(e.name)) continue
       if (scanShowcase(rel, budget)) return true
@@ -90,7 +93,9 @@ function scanShowcase(dir, budget = { files: 1500 }) {
   }
   return false
 }
-const hasShowcase = scanShowcase('')
+const hasShowcase = ['app', 'src', 'lib', 'components', 'pages', 'app/src'].some(
+  (r) => exists(r) && scanShowcase(r),
+)
 
 // ── env hygiene quick checks ─────────────────────────────────────────────
 const gitignore = read('.gitignore')

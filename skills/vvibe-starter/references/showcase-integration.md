@@ -29,10 +29,20 @@ then keep the output minimal and on-brand.
 
 ### 2. Payment / checkout — `portaly-payment` (subscriptions) and/or `portaly-product` (digital products)
 Pick the one that fits the base app's showcase (a subscription plan page, or a
-digital-product storefront). Follow the skill to wire:
-- Product/plan **display** — fetch via the skill's read API and render.
-- **Create checkout session** server-side, redirect the buyer to the returned
-  `checkoutUrl`.
+digital-product storefront).
+
+> **STOP — do not invent the API.** Read `portaly-payment/references/api-contract.md`
+> first and copy the **exact** endpoint, request body, and response shape. The real
+> subscription checkout is `POST {PORTALY_API_HOST}/api/creator-subscription/checkout-sessions`
+> with `{ planId, successRedirectUrl, cancelRedirectUrl, callbackUrl, metadata }`,
+> returning `{ data: { sessionId, checkoutUrl } }`. Do NOT guess paths like
+> `/v1/checkout-sessions` or hosts like `api.portaly.cc` — they 404. `PORTALY_API_HOST`
+> defaults to `https://portaly.ai`.
+
+Wire:
+- Product/plan **display** — fetch via the contract's read API and render.
+- **Create checkout session** server-side (exact contract above), redirect the buyer
+  to the returned `data.checkoutUrl`.
 - A **signed callback handler** route that verifies the HMAC-SHA256 signature
   (`${timestamp}.${stableJson(payload)}` with the merchant `callbackSecret`; headers
   `x-portaly-timestamp` / `x-portaly-signature`). **Vendor and import
@@ -56,6 +66,10 @@ or restyle.
   mapping, so imports like `@/lib/gtag` won't compile. Either (a) ensure
   `tsconfig.json` has `"paths": { "@/*": ["./*"] }` (and `baseUrl`), or (b) use
   **relative imports** in the code you add. Verify the app builds the way you wrote it.
+- **`useSearchParams` needs `<Suspense>`.** The route-change pageview provider uses
+  `useSearchParams()`; in the Next.js App Router that forces a CSR bailout and the
+  **build fails** unless the component is wrapped in `<Suspense>`. Wrap the analytics
+  provider (and any success page reading query params) in `<Suspense>` in the layout.
 - **Currency = TWD — Portaly is TWD-only right now.** Portaly payment runs on TapPay
   and currently supports **only TWD**. Do NOT set the plan/checkout currency to USD —
   keep the Portaly plan, the checkout amount, the displayed price, and the
