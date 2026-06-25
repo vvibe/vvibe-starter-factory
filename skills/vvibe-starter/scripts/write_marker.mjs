@@ -110,10 +110,13 @@ ${showcaseLine
 register at https://insforge.dev/?utm_source=vvibe ; see \`VVIBE_STARTER.md\` step 5.
 
 **Getting started (first thing to do):** this starter has no accounts or keys yet.
-Read **[\`VVIBE_STARTER.md\`](VVIBE_STARTER.md)** and walk the human through
-registering ${accountsLine} and pasting their keys. Registration is a web flow
-(it can't be done over MCP). After that, use the skills above to provision their
-resources and build out the product.
+Read **[\`VVIBE_STARTER.md\`](VVIBE_STARTER.md)** and walk the human through setting up
+${accountsLine}. VVibe connects in ONE browser login — the agent opens it, nothing to
+paste. Because the skills above are ALREADY installed in this repo, right after
+connecting call \`vibe_report_skill_installed\` for each (read its \`version:\` from the
+skill's SKILL.md) so VVibe registers them, turns on their \`vibe_*\` tools, and marks
+onboarding complete. Portaly payment still needs a quick web signup for a key. Then
+use the skills to provision resources and build out the product.
 ${END}`
 
 function upsert(file, createIfMissing) {
