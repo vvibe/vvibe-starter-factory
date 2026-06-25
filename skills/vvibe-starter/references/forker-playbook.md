@@ -40,7 +40,7 @@ in sync.
 >    your account, sets up your workspace, and authorizes this agent. No token to copy.
 > 4. Confirm the `vibe_*` tools now work (the agent can call `vibe_heartbeat`).
 > 5. **Register the pre-installed skills.** This starter already ships the VVibe
->    skills in `.claude/skills/`, so they were never "installed" through VVibe — it
+>    skills in `.claude/skills/` and `.agents/skills/`, so they were never "installed" through VVibe — it
 >    doesn't know about them yet, and each skill's `vibe_*` tools stay hidden until
 >    you say so. Right after connecting, for **each** VVibe skill folder, have your
 >    agent call `vibe_report_skill_installed` (it reads the `version:` from that
