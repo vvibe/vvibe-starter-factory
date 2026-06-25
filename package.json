@@ -1,0 +1,11 @@
+{
+  "name": "vvibe-starter-factory",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Factory skill that turns a web app into a vvibe-optimized starter.",
+  "scripts": {
+    "test": "node skills/vvibe-starter/scripts/selftest.mjs",
+    "verify": "node skills/vvibe-starter/scripts/verify_starter.mjs"
+  }
+}

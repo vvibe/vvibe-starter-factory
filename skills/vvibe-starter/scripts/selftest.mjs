@@ -1,0 +1,183 @@
+#!/usr/bin/env node
+// Per-revision regression gate for the vvibe-starter generators.
+// Runs detect/write_marker/write_playbook against throwaway fixtures and asserts
+// the behavioral invariants that must hold across ANY content revision — plus a
+// script<->reference SYNC check (this repo's #1 maintenance hazard: edit a
+// generator, forget its mirrored reference doc). No agent, no deps.
+//   node selftest.mjs   (or: npm test)   — exits 1 on any failure.
+
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+
+const here = path.dirname(fileURLToPath(import.meta.url))
+const refs = path.join(here, '..', 'references')
+const SCRIPTS = {
+  detect: path.join(here, 'detect.mjs'),
+  marker: path.join(here, 'write_marker.mjs'),
+  playbook: path.join(here, 'write_playbook.mjs'),
+}
+
+const tmpDirs = []
+const tmp = () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'vvibe-selftest-'))
+  tmpDirs.push(d)
+  return d
+}
+const run = (script, dir) => execFileSync('node', [script, dir], { encoding: 'utf8' })
+const read = (dir, file) => fs.readFileSync(path.join(dir, file), 'utf8')
+const slurp = (abs) => fs.readFileSync(abs, 'utf8')
+const count = (s, sub) => s.split(sub).length - 1
+const seedSkills = (d, names) =>
+  names.forEach((n) => fs.mkdirSync(path.join(d, '.claude/skills', n), { recursive: true }))
+
+let failures = 0
+const check = (name, fn) => {
+  try {
+    fn()
+    console.log(`  ok   ${name}`)
+  } catch (e) {
+    failures++
+    console.log(`  FAIL ${name}\n       ${e.message}`)
+  }
+}
+
+// ── write_playbook invariants ──────────────────────────────────────────────
+check('playbook: writes the three files', () => {
+  const d = tmp()
+  run(SCRIPTS.playbook, d)
+  for (const f of ['VVIBE_STARTER.md', '.env.example', '.mcp.json'])
+    assert.ok(fs.existsSync(path.join(d, f)), `missing ${f}`)
+})
+
+check('playbook: .mcp.json is valid JSON, tokenless OAuth (no committed secret)', () => {
+  const d = tmp()
+  run(SCRIPTS.playbook, d)
+  const j = JSON.parse(read(d, '.mcp.json'))
+  const url = j.mcpServers?.vvibe?.url || ''
+  const auth = j.mcpServers?.vvibe?.headers?.Authorization || ''
+  // OAuth path: the cloud MCP host, connected with no token (the browser login
+  // mints + stores the credential out-of-band, never in this committed file).
+  assert.match(url, /^https:\/\/mcp\.vvibe\.ai$/, 'mcp url should be the cloud OAuth host')
+  assert.equal(auth, '', 'tokenless OAuth — there must be no Authorization header')
+})
+
+check('playbook: .env.example is placeholder-only (every var has an empty value)', () => {
+  const d = tmp()
+  run(SCRIPTS.playbook, d)
+  for (const line of read(d, '.env.example').split(/\r?\n/)) {
+    if (!line || line.trimStart().startsWith('#')) continue
+    const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
+    assert.ok(m, `unexpected non-comment line: "${line}"`)
+    assert.equal(m[2], '', `${m[1]} must ship empty (got "${m[2]}")`)
+  }
+})
+
+check('playbook: ensures .env is git-ignored', () => {
+  const d = tmp()
+  run(SCRIPTS.playbook, d)
+  assert.ok(
+    read(d, '.gitignore').split(/\r?\n/).some((l) => l.trim() === '.env'),
+    '.env not added to .gitignore',
+  )
+})
+
+check('playbook: no real-looking secret in any produced file', () => {
+  const d = tmp()
+  run(SCRIPTS.playbook, d)
+  const blob = ['VVIBE_STARTER.md', '.env.example', '.mcp.json'].map((f) => read(d, f)).join('\n')
+  // real key = pcs_(live|test)_ + >=16 token chars; templates only show elided pcs_test_… / pcs_test_xxx
+  const hit = blob.match(/pcs_(live|test)_[A-Za-z0-9]{16,}/)
+  assert.equal(hit, null, `looks like a real key: ${hit?.[0]}`)
+})
+
+// ── write_marker invariants ────────────────────────────────────────────────
+check('marker: idempotent — two runs leave exactly one block', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics'])
+  run(SCRIPTS.marker, d)
+  run(SCRIPTS.marker, d)
+  assert.equal(count(read(d, 'AGENTS.md'), '<!-- vvibe:start -->'), 1)
+  assert.equal(count(read(d, 'AGENTS.md'), '<!-- vvibe:end -->'), 1)
+})
+
+check('marker: creates AGENTS.md, but NOT CLAUDE.md, when neither exists', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics'])
+  run(SCRIPTS.marker, d)
+  assert.ok(fs.existsSync(path.join(d, 'AGENTS.md')), 'AGENTS.md should be created')
+  assert.ok(!fs.existsSync(path.join(d, 'CLAUDE.md')), 'CLAUDE.md must not be created')
+})
+
+check('marker: honest — no "payments" claim, only vendored skills listed, without portaly', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics'])
+  run(SCRIPTS.marker, d)
+  const m = read(d, 'AGENTS.md')
+  assert.ok(!/payments/.test(m), 'claimed payments with no portaly skill vendored')
+  assert.ok(m.includes('`vvibe-analytics`'), 'should list the vendored skill')
+  assert.ok(!m.includes('`portaly-payment`'), 'must not list a skill that was not vendored')
+})
+
+check('marker: claims payments once a portaly skill is vendored', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics', 'portaly-payment'])
+  run(SCRIPTS.marker, d)
+  assert.ok(/payments/.test(read(d, 'AGENTS.md')))
+})
+
+// ── detect is read-only ────────────────────────────────────────────────────
+check('detect: read-only (leaves the dir untouched)', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics'])
+  const before = fs.readdirSync(d).sort().join(',')
+  run(SCRIPTS.detect, d)
+  assert.equal(fs.readdirSync(d).sort().join(','), before, 'detect mutated the dir')
+})
+
+// ── script <-> reference SYNC landmarks ────────────────────────────────────
+// Structural strings that must co-occur in a generator AND its mirrored doc.
+// Punctuation-agnostic (substring), so it survives copy tweaks but fires when a
+// section/link is added to one side and not the other.
+const src = {
+  playbook: slurp(SCRIPTS.playbook),
+  marker: slurp(SCRIPTS.marker),
+  forkerRef: slurp(path.join(refs, 'forker-playbook.md')),
+  envRef: slurp(path.join(refs, 'env-templates.md')),
+  markerRef: slurp(path.join(refs, 'optimized-marker.md')),
+}
+const SYNC = [
+  {
+    label: 'playbook script <-> forker-playbook.md',
+    a: 'playbook',
+    b: 'forkerRef',
+    strings: ['## 1. Connect VVibe', '## 2. Register Portaly Payment', '## 3. Provision', '## 4. Make it yours', '## 5. Deploy to InsForge', '## Cheat sheet', 'insforge.dev/?utm_source=vvibe'],
+  },
+  {
+    label: 'env template <-> env-templates.md',
+    a: 'playbook',
+    b: 'envRef',
+    strings: ['VVIBE_API_KEY', 'NEXT_PUBLIC_GA_MEASUREMENT_ID', 'PORTALY_CALLBACK_SECRET', 'PORTALY_PLAN_ID', 'insforge.dev/?utm_source=vvibe'],
+  },
+  {
+    label: 'marker block <-> optimized-marker.md',
+    a: 'marker',
+    b: 'markerRef',
+    strings: ['vvibe-optimized', 'ship on **InsForge', 'insforge.dev/?utm_source=vvibe', 'Getting started'],
+  },
+]
+for (const s of SYNC)
+  check(`sync: ${s.label}`, () => {
+    for (const str of s.strings) {
+      assert.ok(src[s.a].includes(str), `"${str}" missing from generator (${s.a}) — add it there`)
+      assert.ok(src[s.b].includes(str), `"${str}" missing from reference (${s.b}) — mirror it`)
+    }
+  })
+
+// ── report ─────────────────────────────────────────────────────────────────
+for (const d of tmpDirs) fs.rmSync(d, { recursive: true, force: true })
+console.log(`\nselftest: ${failures === 0 ? 'PASS' : `${failures} FAILED`}`)
+process.exit(failures === 0 ? 0 : 1)

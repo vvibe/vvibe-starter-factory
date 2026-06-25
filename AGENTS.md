@@ -36,6 +36,11 @@ to for the phase you're in. Phases A–F are ordered, idempotent, and resumable.
 Human operators: see the README → **Install the skill** / **Run it on an app** for
 install + invocation steps (works across agents, incl. Codex).
 
+**After editing any generator or its reference doc, run `npm test`** — `selftest.mjs`
+asserts the output invariants + the script↔reference sync, so a half-mirrored edit
+fails fast. To accept a produced starter, run `npm run verify -- <starter-dir>
+--build`. See README → **Continuous acceptance**.
+
 ## Key fact you must internalize
 
 VVibe (and Portaly) registration **cannot** be done through MCP — MCP auth needs

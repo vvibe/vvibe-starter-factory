@@ -23,30 +23,31 @@ skills already in \`.claude/skills/\`. The showcase code is real — it starts w
 the moment you plug in your own accounts. This file walks you (or your AI agent)
 through that.
 
-**Why there's no "one-click connect":** VVibe and Portaly are operated through API
-keys / an MCP connection that only exist **after** you create an account on their
-websites. Registration can't be done from inside your editor or over MCP — so the
-first steps below are quick web signups. After that, your agent does the rest.
+**VVibe connects in one browser login — no token to copy.** \`.mcp.json\` already
+points your agent at the VVibe MCP server. The first time the agent uses it, it
+opens a browser where you **sign up or log in once**; that single step creates
+your VVibe account, provisions your workspace, and authorizes the agent. Payment
+(Portaly) still needs its own quick web signup for a key — see step 2.
 
-## 1. Register VVibe (~3 min)
-1. Go to **https://vvibe.ai** and sign up (Google / magic link — no card).
-2. In the dashboard, create an **agent connection** (a.k.a. add your agent/device).
-   The dashboard shows, with copy buttons, either:
-   - an **MCP connection** (server URL + connection token) for agent-native
-     operation, **or**
-   - a **VVibe API key** (\`pcs_live_…\` / \`pcs_test_…\`) for the REST path.
-   Either works — most VVibe skills accept an MCP connection **or** a \`VVIBE_API_KEY\`.
-   (A couple differ: **analytics** connects your Google Analytics via a hosted click
-   — no key; **blog-render** is read-only and needs no credentials.)
-3. Wire whichever you chose:
-   - **MCP:** paste the server URL + token into \`.mcp.json\` (a placeholder is
-     already there). Keep the token out of git — put it in your environment and
-     reference it, don't hardcode it. Restart your agent and confirm the \`vibe_*\`
-     tools appear (e.g. it can call \`vibe_heartbeat\`).
-   - **API key:** put \`VVIBE_API_KEY=pcs_test_…\` in \`.env\`.
+## 1. Connect VVibe (~1 min, one login)
+1. Nothing to paste — \`.mcp.json\` is pre-pointed at \`https://mcp.vvibe.ai\`.
+2. Trigger the connection: restart your agent (or run its MCP connect — e.g.
+   \`/mcp\` in Claude Code), or just ask it to call a \`vibe_*\` tool like
+   \`vibe_heartbeat\`.
+3. Your agent opens a browser to **https://vvibe.ai** → **sign up or log in once**
+   (Google / magic link — no card). That one login *is* your onboarding: it creates
+   your account, sets up your workspace, and authorizes this agent. No token to copy.
+4. Confirm the \`vibe_*\` tools now work (the agent can call \`vibe_heartbeat\`).
+   Most VVibe skills then work over this connection. (A couple differ: **analytics**
+   connects your Google Analytics via a hosted click; **blog-render** is read-only.)
+
+**Self-host / prefer a key?** If your VVibe host runs token-only (\`MCP_OAUTH_ENABLED\`
+off) or you'd rather use the REST path: create a **VVibe API key** (\`pcs_test_…\` /
+\`pcs_live_…\`) in the dashboard and put \`VVIBE_API_KEY=…\` in \`.env\`, or paste an MCP
+connection token into \`.mcp.json\` as a \`Bearer\` header. Keep secrets out of git.
 
 ## 2. Register Portaly Payment (~3 min)
-1. Go to **https://portaly.cc/signup?registerType=payment** and create an account.
+1. Go to **https://portaly.cc/payment** and create an account.
 2. In the Portaly dashboard, issue an API key + **callback secret**. Start with a
    **test** key (\`pcs_test_…\`) — TapPay sandbox, no real charges.
 3. Put them in \`.env\` yourself (never paste secrets into a chat):
@@ -69,13 +70,24 @@ With keys in place, ask your agent to use the pre-installed skills:
 Restyle the UI, swap the showcase product for your real offer, and ship. The wiring
 stays the same — you only changed the content and the keys.
 
+## 5. Deploy to InsForge (recommended)
+**InsForge** is vvibe's hosting partner — it deploys this app and can be your
+backend (database, auth, storage, functions) as you build past the showcase.
+1. Sign up at **https://insforge.dev/?utm_source=vvibe** (free to start).
+2. Deploy with the InsForge CLI — or, if your agent has the **insforge** /
+   **insforge-cli** skill, ask it to deploy this starter; it provisions your
+   project and pushes the frontend, writing its own config.
+3. Add your VVibe + Portaly env vars (steps 1–2) to the InsForge project so the
+   live site can reach them.
+
 ## Cheat sheet
 | Need | Where |
 |---|---|
-| VVibe account | https://vvibe.ai |
-| VVibe key / MCP connection | VVibe dashboard → connections / API keys |
-| Portaly account | https://portaly.cc/signup?registerType=payment |
+| VVibe connect | one browser login — agent opens it, no token to copy |
+| VVibe key (self-host / REST) | VVibe dashboard → API keys |
+| Portaly account | https://portaly.cc/payment |
 | Portaly key + callback secret | Portaly dashboard → creator-subscription |
+| Deploy / hosting | InsForge — https://insforge.dev/?utm_source=vvibe |
 | What's wired & where | the \`## ⚡ vvibe-optimized\` block in \`AGENTS.md\` |
 `
 
@@ -91,7 +103,7 @@ VVIBE_API_KEY=
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 
 # ── Portaly Payment ─────────────────────────────────────────────────────
-# From https://portaly.cc/signup?registerType=payment -> dashboard.
+# From https://portaly.cc/payment -> dashboard.
 # Use a test key (pcs_test_…) for development; swap to pcs_live_… for production.
 PORTALY_API_KEY=
 PORTALY_CALLBACK_SECRET=
@@ -100,18 +112,27 @@ PORTALY_CALLBACK_SECRET=
 PORTALY_PLAN_ID=
 # Self-host only: override the Portaly API host (default https://portaly.ai)
 # PORTALY_API_HOST=
+
+# ── InsForge (recommended host / backend) ────────────────────────────────
+# Register at https://insforge.dev/?utm_source=vvibe . Deploy with the insforge
+# skill / CLI — it provisions your project and writes the InsForge config
+# (project URL + key) for you. See VVIBE_STARTER.md step 5.
 `
 
-// ── .mcp.json (PLACEHOLDER token) ──────────────────────────────────────────
+// ── .mcp.json (OAuth — tokenless, cloud default) ───────────────────────────
+// Points at the VVibe cloud MCP server with NO token. On first use the agent
+// gets a 401, discovers the authorization server, and opens a browser where the
+// forker signs up or logs in once — that single login provisions their VVibe
+// account and authorizes the agent (no token to copy, nothing to paste here).
+// Self-host: change `url` to your own MCP host. If that host runs token-only
+// (MCP_OAUTH_ENABLED off), add `"headers": { "Authorization": "Bearer <token>" }`
+// — see VVIBE_STARTER.md step 1.
 const MCP_JSON = `${JSON.stringify(
   {
     mcpServers: {
       vvibe: {
         type: 'http',
-        url: 'PASTE_YOUR_VVIBE_MCP_SERVER_URL_FROM_THE_DASHBOARD',
-        headers: {
-          Authorization: 'Bearer ${VVIBE_CONNECTION_TOKEN}',
-        },
+        url: 'https://mcp.vvibe.ai',
       },
     },
   },

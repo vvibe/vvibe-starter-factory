@@ -3,7 +3,8 @@
 A one-command tool that turns **any web app into a vvibe-optimized starter**: it
 pre-installs the vvibe + Portaly skill catalogs, wires a real working showcase
 (GA4 analytics + a TWD Portaly checkout), marks the repo vvibe-optimized, and embeds
-a playbook that walks the next person through connecting their own accounts.
+a playbook that walks the next person through connecting their own accounts and
+deploying on InsForge.
 
 When the **VVibe team** runs it on a curated base app, the result is an *official*
 starter the team publishes. Run on your own app, it's just a fast way to get
@@ -20,7 +21,26 @@ vvibe-starter-factory/
         ├── SKILL.md           ← router: phases A–F
         ├── references/        ← deep-dives, loaded on demand
         └── scripts/           ← detect / write_marker / write_playbook
+                                 + selftest (regression gate) / verify_starter (phase-F acceptance)
 ```
+
+## Continuous acceptance (every revision)
+
+Two layers keep the skill verifiable as it changes:
+
+- **`npm test`** → `selftest.mjs` — fast, no agent. Runs the three generators
+  against throwaway fixtures and asserts the invariants that must hold across any
+  content edit (placeholder-only output, marker idempotency, honest skill listing,
+  read-only detect) **plus a script↔reference sync check**. Runs in CI
+  (`.github/workflows/selftest.yml`) on every push/PR.
+- **`npm run verify -- <starter-dir> [--build]`** → `verify_starter.mjs` — scripts
+  the phase-F gates (`qa-verify.md`) against an actually-produced starter: one
+  marker block, placeholder-only templates, no committed `.env`, no real keys,
+  showcase wired in source, optional `npm run build` + the vendored secret scanner.
+
+**Skill-quality (phase C wiring) is non-deterministic** — measure it as a pass rate:
+run the factory on a fixed base app (e.g. a bare `create-next-app`), then
+`npm run verify -- <dir> --build`, repeated N times.
 
 ## What it produces
 
@@ -39,6 +59,9 @@ A starter app that:
 4. Embeds a **registration playbook** + `.env.example` + `.mcp.json` placeholder, so
    the next person's agent can walk *them* through making *their own* VVibe and
    Portaly accounts.
+5. Recommends deploying on **InsForge** (vvibe's hosting + backend partner) — the
+   playbook points forkers to https://insforge.dev/?utm_source=vvibe and lets their
+   agent drive the deploy.
 
 ## How to use it
 

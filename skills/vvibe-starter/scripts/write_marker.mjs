@@ -106,6 +106,9 @@ ${showcaseLine
   ? `**Showcase already wired:** ${showcaseLine}. It runs as soon as credentials are supplied — see **Getting started** below.`
   : `**Showcase:** not wired yet — see \`references/showcase-integration.md\` to add the analytics + checkout demo.`}
 
+**Deploy:** built to ship on **InsForge** (vvibe's hosting + backend partner) —
+register at https://insforge.dev/?utm_source=vvibe ; see \`VVIBE_STARTER.md\` step 5.
+
 **Getting started (first thing to do):** this starter has no accounts or keys yet.
 Read **[\`VVIBE_STARTER.md\`](VVIBE_STARTER.md)** and walk the human through
 registering ${accountsLine} and pasting their keys. Registration is a web flow

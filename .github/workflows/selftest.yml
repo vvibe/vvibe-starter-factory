@@ -1,0 +1,15 @@
+# Runs the generator regression gate on every push / PR, so every skill revision
+# is verified automatically. No deps to install — selftest.mjs is pure Node.
+name: selftest
+on:
+  push:
+  pull_request:
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test

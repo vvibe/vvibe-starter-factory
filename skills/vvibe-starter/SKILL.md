@@ -2,7 +2,7 @@
 name: vvibe-starter
 version: 0.1.0
 manifest_version: 1
-description: Turn any web app into a vvibe-optimized starter — pre-install the vvibe + Portaly skill catalogs, wire a real working showcase integration (GA4 analytics + a TWD Portaly checkout), mark the repo vvibe-optimized, and embed a registration playbook the downstream user's agent will run. Trigger when someone wants to vvibe-optimize an app, add vvibe + Portaly to a project, run the starter factory, or (for the VVibe team) produce an official starter. Works across agents (Claude Code, Codex, etc.).
+description: Turn any web app into a vvibe-optimized starter — pre-install the vvibe + Portaly skill catalogs, wire a real working showcase integration (GA4 analytics + a TWD Portaly checkout), mark the repo vvibe-optimized, and embed a registration + InsForge-deploy playbook the downstream user's agent will run. Trigger when someone wants to vvibe-optimize an app, add vvibe + Portaly to a project, run the starter factory, or (for the VVibe team) produce an official starter. Works across agents (Claude Code, Codex, etc.).
 ---
 
 # VVibe Starter Factory — Router
@@ -61,7 +61,9 @@ pending items.
 ### B — Pre-install both catalogs ("預裝")  →  `references/install.md`
 Install `vvibe/vvibe-skills` and `portaly-ai/portaly-skills` into the starter and
 **commit** them so forks carry them. Verify `.gitignore` doesn't exclude the skills
-dir. Exact commands + install-target notes live in the reference.
+dir. Exact commands + install-target notes live in the reference. (InsForge is the
+recommended deploy host — phase E — but its skills are **not** vendored; the forker
+installs the InsForge plugin themselves.)
 
 ### C — Wire the working showcase integration  →  `references/showcase-integration.md`
 **Delegate** to the operational skills you installed in B. The curated showcase set:
@@ -86,9 +88,10 @@ starter: `VVIBE_STARTER.md` (the forker playbook), `.env.example` (vvibe + Porta
 placeholders), and `.mcp.json` (placeholder MCP server entry — **no real token**).
 The playbook walks the forker's agent through: register VVibe at https://vvibe.ai →
 connection token **or** `VVIBE_API_KEY` → register Portaly at
-https://portaly.cc/signup?registerType=payment → `PORTALY_API_KEY` + callback secret
-→ run operational skills to provision remote resources. It states plainly *why*
-registration is a web flow (MCP can't register).
+https://portaly.cc/payment → `PORTALY_API_KEY` + callback secret
+→ run operational skills to provision remote resources → **deploy to InsForge**
+(vvibe's hosting partner; register at https://insforge.dev/?utm_source=vvibe). It
+states plainly *why* registration is a web flow (MCP can't register).
 
 ### F — QA before publish  →  `references/qa-verify.md`
 Build the starter, optionally smoke-test with a **throwaway** test key (never

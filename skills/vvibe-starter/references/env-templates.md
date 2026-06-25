@@ -18,7 +18,7 @@ VVIBE_API_KEY=
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 
 # ── Portaly Payment ─────────────────────────────────────────────────────
-# From https://portaly.cc/signup?registerType=payment → dashboard.
+# From https://portaly.cc/payment → dashboard.
 # Use a test key (pcs_test_…) for development; swap to pcs_live_… for production.
 PORTALY_API_KEY=
 PORTALY_CALLBACK_SECRET=
@@ -27,39 +27,43 @@ PORTALY_CALLBACK_SECRET=
 PORTALY_PLAN_ID=
 # Self-host only: override the Portaly API host (default https://portaly.ai)
 # PORTALY_API_HOST=
+
+# ── InsForge (recommended host / backend) ────────────────────────────────
+# Register at https://insforge.dev/?utm_source=vvibe . Deploy with the insforge
+# skill / CLI — it provisions your project and writes the InsForge config
+# (project URL + key) for you. See VVIBE_STARTER.md step 5.
 ```
 
 The starter's own checkout/analytics code must read from these exact names. Do not
 commit a real `.env`; the script also ensures `.env` is git-ignored (adds it if the
 starter's `.gitignore` is missing it).
 
-## `.mcp.json` (placeholder)
+## `.mcp.json` (tokenless OAuth)
 
-A project-level MCP config so the forker can wire VVibe's MCP connection. **The
-token is a placeholder** — the forker pastes their own and keeps it out of git
-(env-var reference shown):
+A project-level MCP config pre-pointed at the VVibe cloud MCP server with **no
+token**. On first use the agent gets a 401, discovers the authorization server, and
+opens a browser where the forker signs up or logs in **once** — that single login
+provisions their account and authorizes the agent. Nothing to paste, no secret in
+the committed file:
 
 ```json
 {
   "mcpServers": {
     "vvibe": {
       "type": "http",
-      "url": "PASTE_YOUR_VVIBE_MCP_SERVER_URL_FROM_THE_DASHBOARD",
-      "headers": {
-        "Authorization": "Bearer ${VVIBE_CONNECTION_TOKEN}"
-      }
+      "url": "https://mcp.vvibe.ai"
     }
   }
 }
 ```
 
 Notes:
-- The exact MCP **server URL** is shown (with a copy button) in the VVibe dashboard
-  when the forker creates a connection — that's why it's a placeholder here, not a
-  hardcoded host.
-- `${VVIBE_CONNECTION_TOKEN}` is read from the environment by the agent's MCP client
-  (Claude Code expands env vars in `.mcp.json`); the forker puts the actual token in
-  their environment, never in the committed file.
+- **Cloud (default):** `https://mcp.vvibe.ai` is the public server URL — safe to commit
+  because the token is never in the file; OAuth is per-forker and lives in the agent's
+  own credential store after the browser login.
+- **Self-host:** change `url` to your own MCP host. If that host runs token-only
+  (`MCP_OAUTH_ENABLED` off), add `"headers": { "Authorization": "Bearer <token>" }`
+  and keep the token out of git via an env-var reference (`${VVIBE_CONNECTION_TOKEN}`).
 - Other clients: Cursor uses `.cursor/mcp.json`, the desktop app uses
   `claude_desktop_config.json` — same `mcpServers` shape. The playbook mentions this;
   the starter ships the `.mcp.json` variant as the primary.

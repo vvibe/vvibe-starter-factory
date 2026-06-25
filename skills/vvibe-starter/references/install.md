@@ -20,7 +20,9 @@ For a **cross-agent** starter, vendor the packs into **two** clean dirs:
 Run from the **base app** root.
 
 ```bash
-# real files into ./.claude/skills/<name>/ ; writes skills-lock.json
+# `-a claude-code` is just the SEED dir the CLI writes real files into — it does
+# NOT lock the starter (or you, or the forker) to Claude Code. The mirror on the
+# last line is what makes it cross-agent. Run this on whatever agent you like.
 npx skills add vvibe/vvibe-skills        -a claude-code --copy -y
 npx skills add portaly-ai/portaly-skills -a claude-code --copy -y
 # mirror into the cross-agent canonical dir so Codex/others can find them
@@ -29,10 +31,18 @@ mkdir -p .agents/skills && cp -R .claude/skills/* .agents/skills/
 
 - `--copy` = real files, not a symlink (Windows-safe, survives a fork).
 - `-s <name>` pins a subset; default is all skills in the repo.
-- Want **every** agent's own dir populated (Cursor, Windsurf, Goose, … ~70 of them)?
-  Use `-a '*' --copy -y` instead — but it adds ~70 per-agent dirs to the repo, heavy
-  for a forkable starter. The two-dir approach above already covers Claude (auto) +
-  everything else (via `.agents/skills` + the marker).
+- **Forker compatibility (the point of the mirror):** the starter ends up with
+  `.claude/skills/` (Claude Code auto-discovers) **and** `.agents/skills/` (the
+  cross-agent canonical dir). A forker on **Codex** is pointed there by the
+  `AGENTS.md` marker; any agent honoring the `.agents`/`AGENTS.md` convention reads
+  it directly. Agents with a bespoke discovery dir (**Cursor** `.cursor/skills`,
+  Windsurf, …) won't *auto*-load from `.agents/skills` — the marker tells them (and
+  their human) where to read instead.
+- Want **every** agent's own dir auto-populated (Cursor, Windsurf, Goose, … ~70 of
+  them)? Use `-a '*' --copy -y` instead — but it adds ~70 per-agent dirs to the repo,
+  heavy for a forkable starter. The two-dir approach above already covers Claude
+  (auto) + everything else (via `.agents/skills` + the marker), so prefer it unless a
+  specific forker audience needs native auto-discovery.
 
 Fallback if the CLI is unavailable — copy straight from source into both dirs:
 ```bash
@@ -46,6 +56,11 @@ cp -R .claude/skills/* .agents/skills/
 For the showcase you need at minimum `vvibe-analytics` + (`portaly-payment` and/or
 `portaly-product`); shipping the full set is recommended so the user sees the
 whole surface.
+
+> **InsForge skills are intentionally NOT vendored.** InsForge is the recommended
+> deploy/host (phase E), but its catalog (`insforge/insforge-skills`) ships via the
+> official InsForge Claude plugin — the forker installs it themselves if their agent
+> uses it. Don't add it to the starter unless that decision changes.
 
 ## Heads-up: the permission wall on the 2nd-party (Portaly) repo
 
@@ -92,5 +107,5 @@ self-hosted backend override only the API host via `VVIBE_API_HOST` /
 defaults; do not change them.
 
 > Domain cheat: **`portaly.ai` = the API host** (what code calls);
-> **`portaly.cc` = the human site** (signup `portaly.cc/signup?registerType=payment`,
+> **`portaly.cc` = the human site** (signup `portaly.cc/payment`,
 > dashboard `portaly.cc/admin/...`). Both are correct — don't "fix" one into the other.

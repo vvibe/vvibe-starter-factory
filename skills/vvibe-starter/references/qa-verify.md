@@ -3,6 +3,13 @@
 Goal: prove the produced starter is correct, runnable, and **carries no secrets**
 before it's published for the public to fork.
 
+> **Most of this checklist is scripted.** Run
+> `node <skill-dir>/scripts/verify_starter.mjs <starter-dir> --build` to gate items
+> 1–5 + the secret scan automatically (exits non-zero on any failure). The steps
+> below are the source of truth for *what* it checks and the manual smoke test it
+> can't automate. (The generators themselves are covered separately by
+> `scripts/selftest.mjs` / `npm test`.)
+
 ## Checklist
 
 1. **Builds clean.**
