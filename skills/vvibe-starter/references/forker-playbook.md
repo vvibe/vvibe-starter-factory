@@ -39,7 +39,13 @@ in sync.
 >    (Google / magic link — no card). That one login *is* your onboarding: it creates
 >    your account, sets up your workspace, and authorizes this agent. No token to copy.
 > 4. Confirm the `vibe_*` tools now work (the agent can call `vibe_heartbeat`).
->    Most VVibe skills then work over this connection. (A couple differ:
+> 5. **Register the pre-installed skills.** This starter already ships the VVibe
+>    skills in `.claude/skills/`, so they were never "installed" through VVibe — it
+>    doesn't know about them yet, and each skill's `vibe_*` tools stay hidden until
+>    you say so. Right after connecting, for **each** VVibe skill folder, have your
+>    agent call `vibe_report_skill_installed` (it reads the `version:` from that
+>    skill's `SKILL.md`). That registers them, turns on their tools (e.g.
+>    `vibe_list_members`), and marks your onboarding complete. (A couple differ:
 >    **analytics** connects your Google Analytics via a hosted click; **blog-render**
 >    is read-only.)
 >
