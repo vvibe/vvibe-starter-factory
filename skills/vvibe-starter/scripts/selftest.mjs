@@ -115,6 +115,16 @@ check('marker: idempotent — two runs leave exactly one block', () => {
   assert.equal(count(read(d, 'AGENTS.md'), '<!-- vvibe:end -->'), 1)
 })
 
+check('marker: leads the file — block sits ABOVE a real app\'s existing docs', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics'])
+  fs.writeFileSync(path.join(d, 'AGENTS.md'), '# MyApp Agent Guide\n\nRead README.md first.\n\nApp-specific rules here.\n')
+  run(SCRIPTS.marker, d)
+  const m = read(d, 'AGENTS.md')
+  assert.ok(m.indexOf('<!-- vvibe:start -->') < m.indexOf('App-specific rules here.'), 'marker must lead, not trail, the app docs')
+  assert.ok(m.indexOf('# MyApp Agent Guide') < m.indexOf('<!-- vvibe:start -->'), 'block goes right under the existing H1, not above it')
+})
+
 check('marker: creates AGENTS.md + a CLAUDE.md that imports it (no duplicate block)', () => {
   const d = tmp()
   seedSkills(d, ['vvibe-analytics'])

@@ -9,7 +9,12 @@ doc explains the shape so you can review the output.
 ## Where it goes
 
 - Into `AGENTS.md` at the starter root (created if absent) — the canonical
-  agent-instructions file, single source of truth for the block.
+  agent-instructions file, single source of truth for the block. Inserted **near the
+  top** (right after a leading `# H1`), NOT appended: on a real app AGENTS.md already
+  holds the app's own long instructions, and a marker at the bottom gets drowned out
+  (an agent reads top-down — verified with a real Codex run, which followed the app's
+  own docs and never saw a bottom-appended marker). The block leads with an
+  **"Agents — do this first"** directive so onboarding wins over app-specific docs.
 - Into `CLAUDE.md` as an **`@AGENTS.md` import** (created if absent, or the import
   appended if a `CLAUDE.md` already exists without it). **Claude Code reads
   `CLAUDE.md`, not `AGENTS.md`**, so without this bridge a Claude-Code forker would
