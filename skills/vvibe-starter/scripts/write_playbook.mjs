@@ -106,7 +106,10 @@ VVIBE_API_KEY=
 # VVIBE_API_HOST=
 
 # Google Analytics 4 (for the analytics showcase). From GA4 Admin -> Data Streams.
+# Next.js reads this prefix; on a Vite SPA only VITE_-prefixed vars reach the browser,
+# so use VITE_GA_MEASUREMENT_ID instead. Keep the one that matches your stack.
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
+# VITE_GA_MEASUREMENT_ID=
 
 # ── Portaly Payment ─────────────────────────────────────────────────────
 # From https://portaly.cc/payment -> dashboard.
@@ -160,13 +163,54 @@ function ensureEnvIgnored() {
   return existed ? 'appended .env to .gitignore' : 'created .gitignore with .env'
 }
 
+// ── merge (don't clobber) into a real base app's existing templates ─────────
+// A non-blank base app may already ship a richer .env.example / .mcp.json that
+// the app needs to boot. Augment those instead of overwriting them.
+function upsertEnvExample() {
+  const abs = path.join(root, '.env.example')
+  if (!fs.existsSync(abs)) { fs.writeFileSync(abs, ENV_EXAMPLE); return 'wrote .env.example' }
+  const existing = fs.readFileSync(abs, 'utf8')
+  if (/^VVIBE_API_KEY=/m.test(existing)) return '.env.example already has vvibe vars — left as-is'
+  const defined = new Set(
+    existing.split(/\r?\n/).map((l) => l.match(/^([A-Z0-9_]+)=/)).filter(Boolean).map((m) => m[1]),
+  )
+  // append only the template's active vars not already defined (keep all comments)
+  const addLines = ENV_EXAMPLE.split(/\r?\n/).filter((line) => {
+    const m = line.match(/^([A-Z0-9_]+)=/)
+    return !(m && defined.has(m[1]))
+  })
+  const block = addLines.join('\n').trim()
+  if (!block) return '.env.example already covers vvibe vars — left as-is'
+  const sep = existing.endsWith('\n') ? '' : '\n'
+  fs.writeFileSync(abs, `${existing}${sep}\n# ── Added by vvibe-starter ──────────────────────────────\n${block}\n`)
+  return 'merged vvibe vars into existing .env.example'
+}
+
+function upsertMcpJson() {
+  const abs = path.join(root, '.mcp.json')
+  if (fs.existsSync(abs)) {
+    try {
+      const j = JSON.parse(fs.readFileSync(abs, 'utf8'))
+      j.mcpServers = j.mcpServers || {}
+      if (j.mcpServers.vvibe) return '.mcp.json already has vvibe server — left as-is'
+      j.mcpServers.vvibe = { type: 'http', url: 'https://mcp.vvibe.ai' }
+      fs.writeFileSync(abs, `${JSON.stringify(j, null, 2)}\n`)
+      return 'merged vvibe server into existing .mcp.json'
+    } catch {
+      // ponytail: unparseable .mcp.json → fall through and replace it
+    }
+  }
+  fs.writeFileSync(abs, MCP_JSON)
+  return 'wrote .mcp.json'
+}
+
 const written = []
-written.push(write('VVIBE_STARTER.md', PLAYBOOK))
-written.push(write('.env.example', ENV_EXAMPLE))
-written.push(write('.mcp.json', MCP_JSON))
+written.push(`VVIBE_STARTER.md (${write('VVIBE_STARTER.md', PLAYBOOK) && 'wrote'})`)
+written.push(`.env.example (${upsertEnvExample()})`)
+written.push(`.mcp.json (${upsertMcpJson()})`)
 const gitignoreResult = ensureEnvIgnored()
 
 console.log('write_playbook.mjs:')
-for (const f of written) console.log(`  wrote ${f}`)
+for (const f of written) console.log(`  ${f}`)
 console.log(`  .gitignore: ${gitignoreResult}`)
 console.log('  (placeholders only — no real secrets written)')

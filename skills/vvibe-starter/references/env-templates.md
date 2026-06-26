@@ -15,7 +15,10 @@ VVIBE_API_KEY=
 # VVIBE_API_HOST=
 
 # Google Analytics 4 (for the analytics showcase). From GA4 Admin → Data Streams.
+# Next.js reads this prefix; on a Vite SPA only VITE_-prefixed vars reach the browser,
+# so use VITE_GA_MEASUREMENT_ID instead. Keep the one that matches your stack.
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
+# VITE_GA_MEASUREMENT_ID=
 
 # ── Portaly Payment ─────────────────────────────────────────────────────
 # From https://portaly.cc/payment → dashboard.

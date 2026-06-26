@@ -7,11 +7,33 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import assert from 'node:assert/strict'
 import { execSync } from 'node:child_process'
 
 const args = process.argv.slice(2)
 const doBuild = args.includes('--build')
 const root = path.resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+
+// Real base apps ship descriptive, non-empty placeholders (your-app.x, localhost,
+// replace_with_…) — so "must be empty" false-fails on them. Flag only values that
+// look like an actual credential; gates 4+6 are the full secret scan.
+const looksSecret = (v) => {
+  if (!v || /^https?:\/\//.test(v)) return false
+  if (/(replace|your[-_]|example|changeme|todo|placeholder|xxx|localhost|^<.*>$)/i.test(v)) return false
+  if (/^(pcs|sk|mcp_ptly|ghp|xox[bap])[-_][A-Za-z0-9]{16,}/.test(v)) return true // known key shapes
+  return v.length >= 24 && /^[A-Za-z0-9+/_=.-]+$/.test(v) // long high-entropy token, no placeholder words
+}
+
+if (args.includes('--selftest')) {
+  // not-secret: empty, URLs, descriptive placeholders, short defaults
+  for (const v of ['', 'https://your-app.insforge.app', 'replace_with_portaly_callback_secret', 'http://localhost:5176', 'mcp_ptly_xxx', 'owner@example.com', 'admin', '<your-token>'])
+    assert.equal(looksSecret(v), false, `false-positive: ${v}`)
+  // secret: real key shapes + long high-entropy tokens
+  for (const v of ['pcs_live_AbCdEf0123456789xyz', 'sk-0123456789abcdefghij', 'mcp_ptly_AbCdEf0123456789abcd', 'Zk9Q2mWp7Lx4Tn8Rv6Hs1Bd5Fg'])
+    assert.equal(looksSecret(v), true, `false-negative: ${v}`)
+  console.log('verify_starter looksSecret: PASS')
+  process.exit(0)
+}
 
 let failures = 0
 const exists = (p) => fs.existsSync(path.join(root, p))
@@ -41,19 +63,19 @@ gate(exists('VVIBE_STARTER.md'), 'VVIBE_STARTER.md present')
 gate(exists('.env.example'), '.env.example present')
 gate(exists('.mcp.json'), '.mcp.json present')
 
-// 3. Placeholders only ------------------------------------------------------
+// 3. No real secret VALUE in .env.example ----------------------------------
 let envOk = true
 let envBad = ''
 for (const line of read('.env.example').split(/\r?\n/)) {
   if (!line || line.trimStart().startsWith('#')) continue
   const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
-  if (!m || m[2] !== '') {
+  if (!m || looksSecret(m[2])) {
     envOk = false
     envBad = line
     break
   }
 }
-gate(envOk, '.env.example is placeholder-only', envBad && `offending: ${envBad}`)
+gate(envOk, '.env.example has no real secret values', envBad && `offending: ${envBad}`)
 
 let mcpOk = false
 try {
@@ -84,7 +106,8 @@ const SENTINELS = ['gtag(', 'vvibe_', 'creator-subscription/checkout', 'checkout
 const SKIP = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.turbo', '.claude', '.agents'])
 const EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.vue', '.svelte', '.astro', '.html'])
 function scanShowcase() {
-  const stack = ['app', 'src', 'lib', 'components', 'pages'].filter(exists)
+  // include server-code roots beyond Next.js: InsForge edge functions, api/, etc.
+  const stack = ['app', 'src', 'lib', 'components', 'pages', 'api', 'insforge', 'functions', 'server'].filter(exists)
   let budget = 2000
   while (stack.length && budget > 0) {
     const dir = stack.pop()
