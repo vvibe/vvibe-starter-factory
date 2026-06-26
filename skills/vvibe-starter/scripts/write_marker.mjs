@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 // Phase D — write the idempotent "vvibe-optimized" marker block.
 // Usage: node write_marker.mjs [base-app-dir]   (defaults to cwd)
-// Inserts/updates the block in AGENTS.md (created if neither AGENTS.md nor
-// CLAUDE.md exists) and in CLAUDE.md if that file already exists. Re-running
-// never duplicates the block. Source of truth — mirror in references/optimized-marker.md.
+// Inserts/updates the block in AGENTS.md (created if absent), and bridges
+// CLAUDE.md to it via an `@AGENTS.md` import — because Claude Code reads
+// CLAUDE.md, NOT AGENTS.md, so a Claude-Code forker would otherwise never see
+// the marker. Single source of truth stays AGENTS.md (no duplicated block).
+// Re-running never duplicates. Mirror in references/optimized-marker.md.
 
 import fs from 'node:fs'
 import path from 'node:path'
@@ -104,7 +106,7 @@ If your agent doesn't auto-discover skills (e.g. **Codex**), read the relevant
 
 ${showcaseLine
   ? `**Showcase already wired:** ${showcaseLine}. It runs as soon as credentials are supplied — see **Getting started** below.`
-  : `**Showcase:** not wired yet — see \`references/showcase-integration.md\` to add the analytics + checkout demo.`}
+  : `**Showcase:** not wired yet — ask your agent to wire the ${hasPayments ? 'analytics + checkout' : 'analytics'} demo using the pre-installed skills (each has its own \`references/\`); see \`VVIBE_STARTER.md\`.`}
 
 **Deploy:** built to ship on **InsForge** (vvibe's hosting + backend partner) —
 register at https://insforge.dev/?utm_source=vvibe ; see \`VVIBE_STARTER.md\` step 5.
@@ -145,9 +147,29 @@ function upsert(file, createIfMissing) {
   return { file, action: present ? 'appended block' : 'created file with block' }
 }
 
+// Claude Code reads CLAUDE.md, not AGENTS.md — bridge with an `@AGENTS.md` import
+// so the marker surfaces, without duplicating the block (AGENTS.md stays the source).
+function bridgeClaude() {
+  const abs = path.join(root, 'CLAUDE.md')
+  const IMPORT = '@AGENTS.md'
+  // Visible breadcrumb too: if a tool doesn't expand the @import, a human/agent
+  // still sees the pointer. Claude Code reads CLAUDE.md, not AGENTS.md.
+  const STUB = `${IMPORT}\n\n> This project is **vvibe-optimized**. The import line above pulls in the setup\n> guidance from AGENTS.md (Claude Code reads CLAUDE.md, not AGENTS.md). New here?\n> Start with [\`VVIBE_STARTER.md\`](VVIBE_STARTER.md).\n`
+  if (!fs.existsSync(abs)) {
+    fs.writeFileSync(abs, STUB)
+    return { file: 'CLAUDE.md', action: 'created (imports @AGENTS.md)' }
+  }
+  const content = fs.readFileSync(abs, 'utf8')
+  if (content.includes(IMPORT) || content.includes(START))
+    return { file: 'CLAUDE.md', action: 'already surfaces AGENTS.md — left as-is' }
+  const sep = content.endsWith('\n') ? '' : '\n'
+  fs.writeFileSync(abs, `${content}${sep}\n${IMPORT}\n`)
+  return { file: 'CLAUDE.md', action: 'appended @AGENTS.md import' }
+}
+
 const results = []
-results.push(upsert('AGENTS.md', true)) // always ensure AGENTS.md
-results.push(upsert('CLAUDE.md', false)) // only if it already exists
+results.push(upsert('AGENTS.md', true)) // always ensure AGENTS.md holds the block
+results.push(bridgeClaude()) // ensure Claude Code surfaces it
 
 console.log('write_marker.mjs:')
 for (const r of results) console.log(`  ${r.file}: ${r.action}`)

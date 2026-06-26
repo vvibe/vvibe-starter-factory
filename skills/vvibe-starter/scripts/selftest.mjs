@@ -94,6 +94,17 @@ check('playbook: no real-looking secret in any produced file', () => {
   assert.equal(hit, null, `looks like a real key: ${hit?.[0]}`)
 })
 
+check('playbook: injects a README banner routing to the playbook, idempotently', () => {
+  const d = tmp()
+  fs.writeFileSync(path.join(d, 'README.md'), '# My App\n\nSome existing readme.\n')
+  run(SCRIPTS.playbook, d)
+  run(SCRIPTS.playbook, d) // idempotent
+  const readme = read(d, 'README.md')
+  assert.equal(count(readme, '<!-- vvibe-readme:start -->'), 1, 'exactly one README banner')
+  assert.ok(readme.includes('VVIBE_STARTER.md'), 'README banner should route to the playbook')
+  assert.ok(readme.includes('# My App'), 'existing README content must be preserved')
+})
+
 // ── write_marker invariants ────────────────────────────────────────────────
 check('marker: idempotent — two runs leave exactly one block', () => {
   const d = tmp()
@@ -104,12 +115,16 @@ check('marker: idempotent — two runs leave exactly one block', () => {
   assert.equal(count(read(d, 'AGENTS.md'), '<!-- vvibe:end -->'), 1)
 })
 
-check('marker: creates AGENTS.md, but NOT CLAUDE.md, when neither exists', () => {
+check('marker: creates AGENTS.md + a CLAUDE.md that imports it (no duplicate block)', () => {
   const d = tmp()
   seedSkills(d, ['vvibe-analytics'])
   run(SCRIPTS.marker, d)
+  run(SCRIPTS.marker, d) // idempotent
   assert.ok(fs.existsSync(path.join(d, 'AGENTS.md')), 'AGENTS.md should be created')
-  assert.ok(!fs.existsSync(path.join(d, 'CLAUDE.md')), 'CLAUDE.md must not be created')
+  const claude = read(d, 'CLAUDE.md')
+  // Claude Code reads CLAUDE.md, NOT AGENTS.md — must bridge, exactly once, no dup block
+  assert.equal(count(claude, '@AGENTS.md'), 1, 'CLAUDE.md should import @AGENTS.md exactly once')
+  assert.ok(!claude.includes('<!-- vvibe:start -->'), 'CLAUDE.md must not duplicate the marker block')
 })
 
 check('marker: honest — no "payments" claim, only vendored skills listed, without portaly', () => {
