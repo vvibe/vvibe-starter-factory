@@ -11,11 +11,38 @@ here is to **orchestrate** them over a curated, minimal showcase surface — not
 hand-write API calls. For each piece below, **load the named skill and follow it**,
 then keep the output minimal and on-brand.
 
+## Wire per the detected stack
+
+Phase A (`detect.mjs`) already classified the base app's stack. The integration
+**shape** is the same everywhere (same API contract, same signer); only *where the
+server code lives* and *how the client reads env* differ. Pick the column for the
+detected stack and use it throughout phase C:
+
+| Concern | Next.js App Router | Vite SPA + InsForge edge functions |
+|---|---|---|
+| GA4 measurement-id env | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `VITE_GA_MEASUREMENT_ID` |
+| Any client-exposed env | `NEXT_PUBLIC_*` | `VITE_*` (only `VITE_`-prefixed vars reach the browser) |
+| Create-checkout-session (server, holds `PORTALY_API_KEY`) | route handler `app/api/checkout/route.ts` | InsForge edge function (e.g. `insforge/functions/checkout/`) |
+| Signed callback handler (server) | route handler `app/api/portaly/callback/route.ts` | InsForge edge function (e.g. `insforge/functions/portaly-callback/`) |
+| Route-change pageview | `useSearchParams()` **must** be wrapped in `<Suspense>` (App Router CSR bailout, else build fails) | react-router `useLocation()` — no Suspense needed |
+
+**Non-negotiable on both:** `PORTALY_API_KEY` and the `callbackSecret` live only in the
+**server** runtime (the route handler / the InsForge function) — never in `VITE_*` /
+`NEXT_PUBLIC_*` and never in client bundles. The signed-callback verifier imports the
+**same** `verifyPortalyCallback` from `portaly-payment/scripts/sign_callback.mjs`
+regardless of runtime (it's plain JS; InsForge functions run it fine). Do NOT
+re-implement `stableJson`.
+
+If detect reported `next-pages-router` or another framework, keep the same contract
+and place the two server pieces in that framework's API-route convention; mirror the
+env-prefix rule (whatever that framework exposes to the client).
+
 ## The curated showcase set
 
 ### 1. Analytics — `vvibe-analytics`
-- Install GA4 (gtag) per the skill, reading the measurement ID from
-  `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
+- Install GA4 (gtag) per the skill, reading the measurement ID from the
+  client-exposed env var for the detected stack (see the stack table above:
+  `NEXT_PUBLIC_GA_MEASUREMENT_ID` on Next.js, `VITE_GA_MEASUREMENT_ID` on Vite).
 - Fire the VVibe standard events on the natural pages (contract:
   `vvibe-analytics/references/event-tracking-contract.md`):
   - `vvibe_product_view` on the product/plan page
@@ -66,10 +93,11 @@ or restyle.
   mapping, so imports like `@/lib/gtag` won't compile. Either (a) ensure
   `tsconfig.json` has `"paths": { "@/*": ["./*"] }` (and `baseUrl`), or (b) use
   **relative imports** in the code you add. Verify the app builds the way you wrote it.
-- **`useSearchParams` needs `<Suspense>`.** The route-change pageview provider uses
-  `useSearchParams()`; in the Next.js App Router that forces a CSR bailout and the
-  **build fails** unless the component is wrapped in `<Suspense>`. Wrap the analytics
-  provider (and any success page reading query params) in `<Suspense>` in the layout.
+- **`useSearchParams` needs `<Suspense>` (Next.js App Router only).** There the
+  route-change pageview provider uses `useSearchParams()`, which forces a CSR bailout
+  and the **build fails** unless wrapped in `<Suspense>` — wrap the analytics provider
+  (and any success page reading query params) in `<Suspense>` in the layout. On a Vite
+  SPA use react-router's `useLocation()` instead; no Suspense boundary is needed.
 - **Currency = TWD — Portaly is TWD-only right now.** Portaly payment runs on TapPay
   and currently supports **only TWD**. Do NOT set the plan/checkout currency to USD —
   keep the Portaly plan, the checkout amount, the displayed price, and the

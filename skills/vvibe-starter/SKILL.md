@@ -52,8 +52,9 @@ Run `node <skill-dir>/scripts/detect.mjs <base-app-dir>`, where `<skill-dir>` is
 folder containing **this** SKILL.md — e.g. `~/.claude/skills/vvibe-starter` when the
 skill is installed, or `skills/vvibe-starter` if you're running from a clone of the
 factory repo. (The `scripts/` and `references/` folders sit next to this file.)
-It is read-only and prints a done/pending checklist: detected stack (expect
-Next.js App Router), presence of `AGENTS.md`/`CLAUDE.md`, whether the two skill
+It is read-only and prints a done/pending checklist: detected stack (Next.js App
+Router **or** a Vite SPA + InsForge edge functions — phase C wires the showcase
+per the detected stack), presence of `AGENTS.md`/`CLAUDE.md`, whether the two skill
 packs are already vendored, whether the marker block and forker playbook already
 exist, and whether `.env.example` / `.mcp.json` templates are present. Do only the
 pending items.

@@ -29,6 +29,12 @@ opens a browser where you **sign up or log in once**; that single step creates
 your VVibe account, provisions your workspace, and authorizes the agent. Payment
 (Portaly) still needs its own quick web signup for a key — see step 2.
 
+> **No AI agent? Do it by hand.** Every step below works manually: sign up at the
+> linked sites, paste keys into \`.env\`, and deploy from the InsForge dashboard. The
+> agent path just automates the clicks. Where a step says "ask your agent", the
+> manual route is the linked dashboard — and for VVibe, use the **API-key path**
+> (step 1, "prefer a key?") instead of the one-click MCP login.
+
 ## 1. Connect VVibe (~1 min, one login)
 1. Nothing to paste — \`.mcp.json\` is pre-pointed at \`https://mcp.vvibe.ai\`.
 2. Trigger the connection: restart your agent (or run its MCP connect — e.g.
@@ -47,10 +53,13 @@ your VVibe account, provisions your workspace, and authorizes the agent. Payment
    and marks your onboarding complete. (A couple differ: **analytics** connects your
    Google Analytics via a hosted click; **blog-render** is read-only.)
 
-**Self-host / prefer a key?** If your VVibe host runs token-only (\`MCP_OAUTH_ENABLED\`
-off) or you'd rather use the REST path: create a **VVibe API key** (\`pcs_test_…\` /
-\`pcs_live_…\`) in the dashboard and put \`VVIBE_API_KEY=…\` in \`.env\`, or paste an MCP
-connection token into \`.mcp.json\` as a \`Bearer\` header. Keep secrets out of git.
+**No AI agent? (or self-host / prefer a key)** Skip the MCP one-click entirely:
+create a **VVibe API key** (\`pcs_test_…\` / \`pcs_live_…\`) in the dashboard at
+https://vvibe.ai and put \`VVIBE_API_KEY=…\` in \`.env\`. That's the whole VVibe connect
+for a human — you can ignore sub-step 5 (skill registration turns on the \`vibe_*\`
+tools, which only an agent uses). Self-hosters on a token-only host (\`MCP_OAUTH_ENABLED\`
+off) do the same, or paste an MCP connection token into \`.mcp.json\` as a \`Bearer\`
+header. Keep secrets out of git.
 
 ## 2. Register Portaly Payment (~3 min)
 1. Go to **https://portaly.cc/payment** and create an account.
@@ -71,6 +80,11 @@ With keys in place, ask your agent to use the pre-installed skills:
   dashboard so traffic + the showcase events show up.
 - **vvibe-product-brain** — teach VVibe about your product (powers email / blog).
 - **vvibe-member**, **vvibe-email**, **vvibe-blog-writer/render** — add as you grow.
+
+**No AI agent?** Do the same in the web dashboards — the skills just automate these:
+create your plan(s)/product(s) at https://portaly.cc/payment, and connect Google
+Analytics from the VVibe dashboard at https://vvibe.ai/dashboard/analytics. Then
+fill the resulting ids/keys into \`.env\` (see \`.env.example\` for the names).
 
 ## 4. Make it yours
 Restyle the UI, swap the showcase product for your real offer, and ship. The wiring
@@ -106,7 +120,10 @@ VVIBE_API_KEY=
 # VVIBE_API_HOST=
 
 # Google Analytics 4 (for the analytics showcase). From GA4 Admin -> Data Streams.
+# Next.js reads this prefix; on a Vite SPA only VITE_-prefixed vars reach the browser,
+# so use VITE_GA_MEASUREMENT_ID instead. Keep the one that matches your stack.
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
+# VITE_GA_MEASUREMENT_ID=
 
 # ── Portaly Payment ─────────────────────────────────────────────────────
 # From https://portaly.cc/payment -> dashboard.
@@ -160,13 +177,86 @@ function ensureEnvIgnored() {
   return existed ? 'appended .env to .gitignore' : 'created .gitignore with .env'
 }
 
+// ── merge (don't clobber) into a real base app's existing templates ─────────
+// A non-blank base app may already ship a richer .env.example / .mcp.json that
+// the app needs to boot. Augment those instead of overwriting them.
+function upsertEnvExample() {
+  const abs = path.join(root, '.env.example')
+  if (!fs.existsSync(abs)) { fs.writeFileSync(abs, ENV_EXAMPLE); return 'wrote .env.example' }
+  const existing = fs.readFileSync(abs, 'utf8')
+  if (/^VVIBE_API_KEY=/m.test(existing)) return '.env.example already has vvibe vars — left as-is'
+  const defined = new Set(
+    existing.split(/\r?\n/).map((l) => l.match(/^([A-Z0-9_]+)=/)).filter(Boolean).map((m) => m[1]),
+  )
+  // append only the template's active vars not already defined (keep all comments)
+  const addLines = ENV_EXAMPLE.split(/\r?\n/).filter((line) => {
+    const m = line.match(/^([A-Z0-9_]+)=/)
+    return !(m && defined.has(m[1]))
+  })
+  const block = addLines.join('\n').trim()
+  if (!block) return '.env.example already covers vvibe vars — left as-is'
+  const sep = existing.endsWith('\n') ? '' : '\n'
+  fs.writeFileSync(abs, `${existing}${sep}\n# ── Added by vvibe-starter ──────────────────────────────\n${block}\n`)
+  return 'merged vvibe vars into existing .env.example'
+}
+
+function upsertMcpJson() {
+  const abs = path.join(root, '.mcp.json')
+  if (fs.existsSync(abs)) {
+    try {
+      const j = JSON.parse(fs.readFileSync(abs, 'utf8'))
+      j.mcpServers = j.mcpServers || {}
+      if (j.mcpServers.vvibe) return '.mcp.json already has vvibe server — left as-is'
+      j.mcpServers.vvibe = { type: 'http', url: 'https://mcp.vvibe.ai' }
+      fs.writeFileSync(abs, `${JSON.stringify(j, null, 2)}\n`)
+      return 'merged vvibe server into existing .mcp.json'
+    } catch {
+      // ponytail: unparseable .mcp.json → fall through and replace it
+    }
+  }
+  fs.writeFileSync(abs, MCP_JSON)
+  return 'wrote .mcp.json'
+}
+
+// README is the human's natural first read — inject a small delimited banner that
+// routes them to the playbook (the only auto-discovery a non-agent forker gets).
+function upsertReadmeBanner() {
+  const B_START = '<!-- vvibe-readme:start -->'
+  const B_END = '<!-- vvibe-readme:end -->'
+  const banner = `${B_START}
+> ⚡ **vvibe-optimized starter.** Analytics, members, email, blog & payments are pre-wired via [VVibe](https://vvibe.ai) + [Portaly](https://portaly.cc).
+> **Start here → [\`VVIBE_STARTER.md\`](VVIBE_STARTER.md)** — works with or without an AI agent.
+${B_END}`
+  const done = []
+  for (const name of ['README.md', 'README.en.md']) {
+    const abs = path.join(root, name)
+    if (!fs.existsSync(abs)) continue
+    let c = fs.readFileSync(abs, 'utf8')
+    const s = c.indexOf(B_START)
+    const e = c.indexOf(B_END)
+    if (s !== -1 && e !== -1 && e > s) {
+      c = c.slice(0, s) + banner + c.slice(e + B_END.length)
+    } else {
+      const lines = c.split(/\r?\n/)
+      const h1 = lines.findIndex((l) => l.startsWith('# '))
+      if (h1 !== -1) lines.splice(h1 + 1, 0, '', banner)
+      else lines.unshift(banner, '')
+      c = lines.join('\n')
+    }
+    fs.writeFileSync(abs, c)
+    done.push(name)
+  }
+  return done.length ? `banner in ${done.join(', ')}` : 'no README found — skipped'
+}
+
 const written = []
-written.push(write('VVIBE_STARTER.md', PLAYBOOK))
-written.push(write('.env.example', ENV_EXAMPLE))
-written.push(write('.mcp.json', MCP_JSON))
+written.push(`VVIBE_STARTER.md (${write('VVIBE_STARTER.md', PLAYBOOK) && 'wrote'})`)
+written.push(`.env.example (${upsertEnvExample()})`)
+written.push(`.mcp.json (${upsertMcpJson()})`)
+written.push(`README (${upsertReadmeBanner()})`)
 const gitignoreResult = ensureEnvIgnored()
 
 console.log('write_playbook.mjs:')
-for (const f of written) console.log(`  wrote ${f}`)
+for (const f of written) console.log(`  ${f}`)
 console.log(`  .gitignore: ${gitignoreResult}`)
 console.log('  (placeholders only — no real secrets written)')

@@ -30,6 +30,12 @@ in sync.
 > your VVibe account, provisions your workspace, and authorizes the agent. Payment
 > (Portaly) still needs its own quick web signup for a key — see step 2.
 >
+> > **No AI agent? Do it by hand.** Every step below works manually: sign up at the
+> > linked sites, paste keys into `.env`, and deploy from the InsForge dashboard. The
+> > agent path just automates the clicks. Where a step says "ask your agent", the
+> > manual route is the linked dashboard — and for VVibe, use the **API-key path**
+> > (step 1, "prefer a key?") instead of the one-click MCP login.
+>
 > ## 1. Connect VVibe (≈1 min, one login)
 > 1. Nothing to paste — `.mcp.json` is pre-pointed at `https://mcp.vvibe.ai`.
 > 2. Trigger the connection: restart your agent (or run its MCP connect — e.g.
@@ -49,11 +55,13 @@ in sync.
 >    **analytics** connects your Google Analytics via a hosted click; **blog-render**
 >    is read-only.)
 >
-> **Self-host / prefer a key?** If your VVibe host runs token-only
-> (`MCP_OAUTH_ENABLED` off) or you'd rather use the REST path: create a **VVibe API
-> key** (`pcs_test_…` / `pcs_live_…`) in the dashboard and put `VVIBE_API_KEY=…` in
-> `.env`, or paste an MCP connection token into `.mcp.json` as a `Bearer` header.
-> Keep secrets out of git.
+> **No AI agent? (or self-host / prefer a key)** Skip the MCP one-click entirely:
+> create a **VVibe API key** (`pcs_test_…` / `pcs_live_…`) in the dashboard at
+> https://vvibe.ai and put `VVIBE_API_KEY=…` in `.env`. That's the whole VVibe
+> connect for a human — you can ignore sub-step 5 (skill registration turns on the
+> `vibe_*` tools, which only an agent uses). Self-hosters on a token-only host
+> (`MCP_OAUTH_ENABLED` off) do the same, or paste an MCP connection token into
+> `.mcp.json` as a `Bearer` header. Keep secrets out of git.
 >
 > ## 2. Register Portaly Payment (≈3 min)
 > 1. Go to **https://portaly.cc/payment** and create an account.
@@ -74,6 +82,11 @@ in sync.
 >   dashboard so traffic + the showcase events show up.
 > - **vvibe-product-brain** — teach VVibe about your product (powers email / blog).
 > - **vvibe-member**, **vvibe-email**, **vvibe-blog-writer/render** — add as you grow.
+>
+> **No AI agent?** Do the same in the web dashboards — the skills just automate
+> these: create your plan(s)/product(s) at https://portaly.cc/payment, and connect
+> Google Analytics from the VVibe dashboard at https://vvibe.ai/dashboard/analytics.
+> Then fill the resulting ids/keys into `.env` (see `.env.example` for the names).
 >
 > ## 4. Make it yours
 > Restyle the UI, swap the showcase product for your real offer, and ship. The

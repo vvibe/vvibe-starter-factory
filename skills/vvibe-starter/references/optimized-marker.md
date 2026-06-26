@@ -8,9 +8,17 @@ doc explains the shape so you can review the output.
 
 ## Where it goes
 
-- Into `AGENTS.md` at the starter root (created if absent).
-- Also into `CLAUDE.md` **if that file already exists** (don't create one just for
-  this — `AGENTS.md` is the canonical agent-instructions file).
+- Into `AGENTS.md` at the starter root (created if absent) — the canonical
+  agent-instructions file, single source of truth for the block. Inserted **near the
+  top** (right after a leading `# H1`), NOT appended: on a real app AGENTS.md already
+  holds the app's own long instructions, and a marker at the bottom gets drowned out
+  (an agent reads top-down — verified with a real Codex run, which followed the app's
+  own docs and never saw a bottom-appended marker). The block leads with an
+  **"Agents — do this first"** directive so onboarding wins over app-specific docs.
+- Into `CLAUDE.md` as an **`@AGENTS.md` import** (created if absent, or the import
+  appended if a `CLAUDE.md` already exists without it). **Claude Code reads
+  `CLAUDE.md`, not `AGENTS.md`**, so without this bridge a Claude-Code forker would
+  never see the marker. The import avoids duplicating the block (no drift).
 
 ## The block (delimited, idempotent)
 
@@ -59,14 +67,19 @@ product.
 <!-- vvibe:end -->
 ```
 
-## Optional README badge
+## README banner (auto-injected by phase E)
 
-If the starter has a `README.md`, the team may add a one-line badge near the top:
+A human forker's natural first read is `README.md`, not `AGENTS.md`/`VVIBE_STARTER.md`
+— so `write_playbook.mjs` (phase E) injects a small delimited banner near the top of
+`README.md` (and `README.en.md` if present) that routes them to the playbook:
 
 ```markdown
-> ⚡ **vvibe-optimized starter** — analytics, members, email, blog & payments via
-> [VVibe](https://vvibe.ai) + [Portaly](https://portaly.cc). See `VVIBE_STARTER.md`.
+<!-- vvibe-readme:start -->
+> ⚡ **vvibe-optimized starter.** Analytics, members, email, blog & payments are pre-wired via [VVibe](https://vvibe.ai) + [Portaly](https://portaly.cc).
+> **Start here → [`VVIBE_STARTER.md`](VVIBE_STARTER.md)** — works with or without an AI agent.
+<!-- vvibe-readme:end -->
 ```
 
-`write_marker.mjs` does not touch `README.md` automatically (it's content the team
-curates) — add the badge by hand if wanted.
+It's delimited + idempotent (distinct `vvibe-readme:` markers, so it never collides
+with the AGENTS.md `vvibe:` block and re-runs replace in place). This is the only
+auto-discovery a **non-agent** forker gets, so it's on by default, not opt-in.
