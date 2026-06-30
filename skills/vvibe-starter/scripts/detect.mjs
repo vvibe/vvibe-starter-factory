@@ -50,7 +50,12 @@ const skillsDir = presentSkillDirs.length ? presentSkillDirs.join(', ') : null
 // Union across every present dir so split installs (CLI's .agents/skills + a
 // partial copy in .claude/skills) are both seen.
 const installedSkills = [...new Set(presentSkillDirs.flatMap((d) => listDir(d)))]
-const hasVvibeSkills = installedSkills.some((n) => n.startsWith('vvibe-'))
+// `vvibe-starter` is THIS factory skill — it starts with `vvibe-` but is the
+// optimizer, not one of the operational catalogs we vendor in phase B. It is
+// commonly installed alongside the base app while this skill runs, so exclude it
+// or its mere presence would report phase B "done" with no operational skill present.
+const FACTORY_SKILL = 'vvibe-starter'
+const hasVvibeSkills = installedSkills.some((n) => n.startsWith('vvibe-') && n !== FACTORY_SKILL)
 const hasPortalySkills = installedSkills.some((n) => n.startsWith('portaly-'))
 
 // ── marker / playbook / templates ────────────────────────────────────────

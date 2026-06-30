@@ -200,22 +200,69 @@ function upsertEnvExample() {
   return 'merged vvibe vars into existing .env.example'
 }
 
-function upsertMcpJson() {
-  const abs = path.join(root, '.mcp.json')
-  if (fs.existsSync(abs)) {
-    try {
-      const j = JSON.parse(fs.readFileSync(abs, 'utf8'))
-      j.mcpServers = j.mcpServers || {}
-      if (j.mcpServers.vvibe) return '.mcp.json already has vvibe server — left as-is'
-      j.mcpServers.vvibe = { type: 'http', url: 'https://mcp.vvibe.ai' }
-      fs.writeFileSync(abs, `${JSON.stringify(j, null, 2)}\n`)
-      return 'merged vvibe server into existing .mcp.json'
-    } catch {
-      // ponytail: unparseable .mcp.json → fall through and replace it
-    }
+// This starter standardizes on the VVibe MCP. A *standalone* Portaly MCP
+// (`@portaly-ai/portaly-mcp`, an `mcp_ptly_…` token, usually keyed `portaly-vibe`) is
+// real but LEGACY here — operate Portaly through VVibe's `vibe_*` tools instead. So
+// reconcile it OUT of the MCP config; otherwise the starter ships two MCPs and agents
+// follow the legacy one. (We never claim "Portaly has no MCP" — we just don't wire it.)
+function isLegacyPortalyMcp(name, server) {
+  if (name === 'portaly-vibe' || name === 'portaly') return true
+  const args = Array.isArray(server?.args) ? server.args.join(' ') : ''
+  if (/@portaly-ai\/portaly-mcp/.test(args)) return true
+  if (server?.env && Object.prototype.hasOwnProperty.call(server.env, 'PORTALY_API_TOKEN')) return true
+  return false
+}
+
+function reconcileMcpFile(file, { createIfMissing }) {
+  const abs = path.join(root, file)
+  if (!fs.existsSync(abs)) {
+    if (!createIfMissing) return null
+    fs.writeFileSync(abs, MCP_JSON)
+    return `${file}: wrote (vvibe only)`
   }
-  fs.writeFileSync(abs, MCP_JSON)
-  return 'wrote .mcp.json'
+  let j
+  try {
+    j = JSON.parse(fs.readFileSync(abs, 'utf8'))
+  } catch {
+    if (!createIfMissing) return `${file}: unparseable — left as-is`
+    fs.writeFileSync(abs, MCP_JSON)
+    return `${file}: replaced unparseable file`
+  }
+  // Parseable but wrong shape (null / primitive / array) — JSON.parse can legally
+  // return those, and the mutations below assume a plain object. Treat like unparseable.
+  if (!j || typeof j !== 'object' || Array.isArray(j)) {
+    if (!createIfMissing) return `${file}: invalid JSON shape — left as-is`
+    fs.writeFileSync(abs, MCP_JSON)
+    return `${file}: replaced invalid JSON shape`
+  }
+  j.mcpServers = j.mcpServers || {}
+  const removed = Object.keys(j.mcpServers).filter((n) => isLegacyPortalyMcp(n, j.mcpServers[n]))
+  for (const n of removed) delete j.mcpServers[n]
+  // Canonicalize the vvibe server to the tokenless cloud entry (matches MCP_JSON).
+  // Even if one already exists, REPAIR it — a stale URL or a committed
+  // `headers.Authorization` would break the tokenless-OAuth contract and could ship a
+  // real credential (the factory's #1 guardrail). The starter ships the cloud default;
+  // self-host forks change the URL themselves post-fork (see env-templates.md).
+  const CANONICAL_VVIBE = { type: 'http', url: 'https://mcp.vvibe.ai' }
+  const hadVvibe = !!j.mcpServers.vvibe
+  const wasCanonical = hadVvibe && JSON.stringify(j.mcpServers.vvibe) === JSON.stringify(CANONICAL_VVIBE)
+  j.mcpServers.vvibe = { ...CANONICAL_VVIBE }
+  fs.writeFileSync(abs, `${JSON.stringify(j, null, 2)}\n`)
+  const parts = []
+  if (!hadVvibe) parts.push('added vvibe server')
+  else if (!wasCanonical) parts.push('canonicalized vvibe server (tokenless)')
+  if (removed.length) parts.push(`removed legacy Portaly MCP (${removed.join(', ')})`)
+  if (!parts.length) parts.push('already canonical — left as-is')
+  return `${file}: ${parts.join('; ')}`
+}
+
+function upsertMcpJson() {
+  // .mcp.json is always present in the starter; .cursor/mcp.json only if the app uses it.
+  const results = [
+    reconcileMcpFile('.mcp.json', { createIfMissing: true }),
+    reconcileMcpFile('.cursor/mcp.json', { createIfMissing: false }),
+  ].filter(Boolean)
+  return results.join(' | ')
 }
 
 // README is the human's natural first read — inject a small delimited banner that

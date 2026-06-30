@@ -105,6 +105,51 @@ check('playbook: injects a README banner routing to the playbook, idempotently',
   assert.ok(readme.includes('# My App'), 'existing README content must be preserved')
 })
 
+check('playbook: reconciles a legacy standalone Portaly MCP out of .mcp.json + .cursor', () => {
+  const d = tmp()
+  const legacy = {
+    mcpServers: {
+      'portaly-vibe': { command: 'npx', args: ['-y', '@portaly-ai/portaly-mcp'], env: { PORTALY_API_TOKEN: 'mcp_ptly_xxx' } },
+      'some-other': { type: 'http', url: 'https://example.com' },
+    },
+  }
+  fs.writeFileSync(path.join(d, '.mcp.json'), JSON.stringify(legacy, null, 2))
+  fs.mkdirSync(path.join(d, '.cursor'), { recursive: true })
+  fs.writeFileSync(path.join(d, '.cursor/mcp.json'), JSON.stringify(legacy, null, 2))
+  run(SCRIPTS.playbook, d)
+  run(SCRIPTS.playbook, d) // idempotent
+  for (const f of ['.mcp.json', '.cursor/mcp.json']) {
+    const j = JSON.parse(read(d, f))
+    assert.ok(j.mcpServers.vvibe, `${f}: vvibe server should be present`)
+    assert.ok(!j.mcpServers['portaly-vibe'], `${f}: legacy portaly-vibe must be removed`)
+    assert.ok(j.mcpServers['some-other'], `${f}: unrelated servers must be preserved`)
+    assert.ok(!read(d, f).includes('mcp_ptly_'), `${f}: legacy mcp_ptly_ token must be gone`)
+  }
+})
+
+check('playbook: repairs a non-canonical vvibe server (strips committed Authorization)', () => {
+  const d = tmp()
+  fs.writeFileSync(
+    path.join(d, '.mcp.json'),
+    JSON.stringify({ mcpServers: { vvibe: { type: 'http', url: 'https://stale.example', headers: { Authorization: 'Bearer mcp_secret_xxx' } } } }, null, 2),
+  )
+  run(SCRIPTS.playbook, d)
+  const v = JSON.parse(read(d, '.mcp.json')).mcpServers.vvibe
+  assert.equal(v.url, 'https://mcp.vvibe.ai', 'stale vvibe url must be canonicalized')
+  assert.ok(!v.headers, 'a committed Authorization header must be stripped (tokenless OAuth)')
+  assert.ok(!read(d, '.mcp.json').includes('Bearer'), 'no committed bearer token may survive')
+})
+
+check('playbook: a valid-but-wrong-shape .mcp.json is replaced, not crashed on', () => {
+  for (const bad of ['null', '42', '[]', '"x"']) {
+    const d = tmp()
+    fs.writeFileSync(path.join(d, '.mcp.json'), bad)
+    run(SCRIPTS.playbook, d) // must not throw
+    const j = JSON.parse(read(d, '.mcp.json'))
+    assert.equal(j.mcpServers?.vvibe?.url, 'https://mcp.vvibe.ai', `shape "${bad}" should be replaced with the canonical config`)
+  }
+})
+
 // ── write_marker invariants ────────────────────────────────────────────────
 check('marker: idempotent — two runs leave exactly one block', () => {
   const d = tmp()
@@ -154,6 +199,16 @@ check('marker: claims payments once a portaly skill is vendored', () => {
   assert.ok(/payments/.test(read(d, 'AGENTS.md')))
 })
 
+check('marker: product-only stack names portaly-product, not portaly-payment', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics', 'portaly-product'])
+  run(SCRIPTS.marker, d)
+  const m = read(d, 'AGENTS.md')
+  // The MCP note must reference the skill that actually vendored, not the other one.
+  assert.ok(m.includes('`portaly-product`'), 'product-only marker should name portaly-product')
+  assert.ok(!m.includes('register the `portaly-payment`'), 'product-only marker must not tell the user to register portaly-payment')
+})
+
 // ── detect is read-only ────────────────────────────────────────────────────
 check('detect: read-only (leaves the dir untouched)', () => {
   const d = tmp()
@@ -161,6 +216,15 @@ check('detect: read-only (leaves the dir untouched)', () => {
   const before = fs.readdirSync(d).sort().join(',')
   run(SCRIPTS.detect, d)
   assert.equal(fs.readdirSync(d).sort().join(','), before, 'detect mutated the dir')
+})
+
+check('detect: the factory skill alone does NOT report the vvibe catalog as vendored', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-starter']) // only the optimizer itself, no operational skills
+  const out = run(SCRIPTS.detect, d)
+  const vvibeLine = out.split(/\r?\n/).find((l) => l.includes('vvibe/vvibe-skills vendored'))
+  assert.ok(vvibeLine, 'expected a vvibe-skills line in the report')
+  assert.ok(/PENDING/.test(vvibeLine), `vvibe-starter alone must read PENDING, got: ${vvibeLine.trim()}`)
 })
 
 // ── script <-> reference SYNC landmarks ────────────────────────────────────

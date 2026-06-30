@@ -28,10 +28,21 @@ detected stack and use it throughout phase C:
 
 **Non-negotiable on both:** `PORTALY_API_KEY` and the `callbackSecret` live only in the
 **server** runtime (the route handler / the InsForge function) — never in `VITE_*` /
-`NEXT_PUBLIC_*` and never in client bundles. The signed-callback verifier imports the
-**same** `verifyPortalyCallback` from `portaly-payment/scripts/sign_callback.mjs`
-regardless of runtime (it's plain JS; InsForge functions run it fine). Do NOT
-re-implement `stableJson`.
+`NEXT_PUBLIC_*` and never in client bundles.
+
+**Callback verification — mind the runtime.** `portaly-payment/scripts/sign_callback.mjs`
+does `import crypto from "node:crypto"` (`createHmac` / `timingSafeEqual`), so it runs
+**only on a Node runtime** — it is NOT runtime-agnostic plain JS:
+- **Next.js route handler (Node runtime by default):** import `verifyPortalyCallback`
+  from that script directly — do NOT re-implement it.
+- **InsForge edge function (WebCrypto runtime — no `node:crypto`):** you **cannot** import
+  `sign_callback.mjs`; it will fail to load. Import the WebCrypto sibling instead —
+  `portaly-payment/scripts/sign_callback.webcrypto.mjs` (and the matching
+  `portaly-product` copy) — which verifies with the global `crypto.subtle` and ships a
+  **byte-identical** `stableJson` (verified equal to `sign_callback.mjs`). Its
+  `verifyPortalyCallback` is **async** (WebCrypto is promise-based), so `await` it. Do
+  NOT hand-roll `stableJson`: keys sort with `localeCompare`, and a naive `.sort()`
+  (UTF-16 order) silently mismatches some keys → rejects real callbacks.
 
 If detect reported `next-pages-router` or another framework, keep the same contract
 and place the two server pieces in that framework's API-route convention; mirror the
@@ -72,11 +83,12 @@ Wire:
   to the returned `data.checkoutUrl`.
 - A **signed callback handler** route that verifies the HMAC-SHA256 signature
   (`${timestamp}.${stableJson(payload)}` with the merchant `callbackSecret`; headers
-  `x-portaly-timestamp` / `x-portaly-signature`). **Vendor and import
-  `portaly-payment/scripts/sign_callback.mjs`'s `verifyPortalyCallback` — do NOT
-  re-implement `stableJson`.** Re-implementations drift: the canonical signer sorts
-  object keys with `localeCompare`, and a naive `.sort()` (UTF-16 order) will silently
-  mismatch on some keys and reject real callbacks.
+  `x-portaly-timestamp` / `x-portaly-signature`). **Reuse the canonical signer per the
+  runtime split above** — import `verifyPortalyCallback` from
+  `portaly-payment/scripts/sign_callback.mjs` on Node (Next.js), or re-derive with
+  WebCrypto on InsForge while keeping `stableJson` byte-identical. Whatever you do, the
+  canonical signer sorts object keys with `localeCompare`; a naive `.sort()` (UTF-16
+  order) will silently mismatch on some keys and reject real callbacks.
 - A **success page** that fires `vvibe_checkout_complete` + GA4 `purchase`.
 - All reads/writes use `PORTALY_API_KEY` from env; host overridable via
   `PORTALY_API_HOST` (default `https://portaly.ai`).
