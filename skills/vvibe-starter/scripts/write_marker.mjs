@@ -51,18 +51,25 @@ const skillLines = installed.length
   ? installed.map((n) => (DESC[n] ? `- \`${n}\` — ${DESC[n]}` : `- \`${n}\``)).join('\n')
   : '- _(none detected — run the phase B install first)_'
 
-const hasPayments = installed.includes('portaly-payment') || installed.includes('portaly-product')
+const hasPortalyPayment = installed.includes('portaly-payment')
+const hasPortalyProduct = installed.includes('portaly-product')
+const hasPayments = hasPortalyPayment || hasPortalyProduct
+// Name only the Portaly skill(s) that ACTUALLY vendored, so a product-only starter is
+// not told to register `portaly-payment` (and vice versa).
+const portalySkillRefs = [hasPortalyPayment && '`portaly-payment`', hasPortalyProduct && '`portaly-product`']
+  .filter(Boolean)
+  .join(' / ')
 // MCP note: VVibe is the canonical MCP. Only when Portaly is in the stack do we add the
 // legacy-standalone-Portaly-MCP disambiguation (otherwise it's irrelevant noise — and
-// would name `portaly-payment` in an analytics-only starter that never vendored it).
+// would name a Portaly skill an analytics-only starter never vendored).
 const mcpNote = hasPayments
   ? `> **MCP: this starter standardizes on VVibe.** Connect VVibe via one browser login
 > through the \`vvibe\` MCP server in \`.mcp.json\` — **no token to paste**. Operate
 > Portaly **through VVibe** (the \`vibe_*\` tools, available after you register the
-> \`portaly-payment\` skill). Portaly also ships a *standalone* MCP
+> ${portalySkillRefs} skill${hasPortalyPayment && hasPortalyProduct ? 's' : ''}). Portaly also ships a *standalone* MCP
 > (\`@portaly-ai/portaly-mcp\`, \`mcp_ptly_…\` token) — in this starter that path is
-> **legacy: don't wire it** (it's reconciled out of the MCP config). Checkout uses a
-> separate server-side \`PORTALY_API_KEY\`, not an MCP.`
+> **legacy: don't wire it** (it's reconciled out of the MCP config). Portaly API calls
+> use a separate server-side \`PORTALY_API_KEY\`, not an MCP.`
   : `> **MCP: this starter standardizes on VVibe.** Connect VVibe via one browser login
 > through the \`vvibe\` MCP server in \`.mcp.json\` — **no token to paste**.`
 const stackLine = hasPayments ? '**VVibe** + **Portaly** creator stacks' : '**VVibe** creator stack'

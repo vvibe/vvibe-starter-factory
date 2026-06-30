@@ -228,14 +228,29 @@ function reconcileMcpFile(file, { createIfMissing }) {
     fs.writeFileSync(abs, MCP_JSON)
     return `${file}: replaced unparseable file`
   }
+  // Parseable but wrong shape (null / primitive / array) — JSON.parse can legally
+  // return those, and the mutations below assume a plain object. Treat like unparseable.
+  if (!j || typeof j !== 'object' || Array.isArray(j)) {
+    if (!createIfMissing) return `${file}: invalid JSON shape — left as-is`
+    fs.writeFileSync(abs, MCP_JSON)
+    return `${file}: replaced invalid JSON shape`
+  }
   j.mcpServers = j.mcpServers || {}
   const removed = Object.keys(j.mcpServers).filter((n) => isLegacyPortalyMcp(n, j.mcpServers[n]))
   for (const n of removed) delete j.mcpServers[n]
+  // Canonicalize the vvibe server to the tokenless cloud entry (matches MCP_JSON).
+  // Even if one already exists, REPAIR it — a stale URL or a committed
+  // `headers.Authorization` would break the tokenless-OAuth contract and could ship a
+  // real credential (the factory's #1 guardrail). The starter ships the cloud default;
+  // self-host forks change the URL themselves post-fork (see env-templates.md).
+  const CANONICAL_VVIBE = { type: 'http', url: 'https://mcp.vvibe.ai' }
   const hadVvibe = !!j.mcpServers.vvibe
-  if (!hadVvibe) j.mcpServers.vvibe = { type: 'http', url: 'https://mcp.vvibe.ai' }
+  const wasCanonical = hadVvibe && JSON.stringify(j.mcpServers.vvibe) === JSON.stringify(CANONICAL_VVIBE)
+  j.mcpServers.vvibe = { ...CANONICAL_VVIBE }
   fs.writeFileSync(abs, `${JSON.stringify(j, null, 2)}\n`)
   const parts = []
   if (!hadVvibe) parts.push('added vvibe server')
+  else if (!wasCanonical) parts.push('canonicalized vvibe server (tokenless)')
   if (removed.length) parts.push(`removed legacy Portaly MCP (${removed.join(', ')})`)
   if (!parts.length) parts.push('already canonical — left as-is')
   return `${file}: ${parts.join('; ')}`

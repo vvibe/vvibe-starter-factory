@@ -127,6 +127,29 @@ check('playbook: reconciles a legacy standalone Portaly MCP out of .mcp.json + .
   }
 })
 
+check('playbook: repairs a non-canonical vvibe server (strips committed Authorization)', () => {
+  const d = tmp()
+  fs.writeFileSync(
+    path.join(d, '.mcp.json'),
+    JSON.stringify({ mcpServers: { vvibe: { type: 'http', url: 'https://stale.example', headers: { Authorization: 'Bearer mcp_secret_xxx' } } } }, null, 2),
+  )
+  run(SCRIPTS.playbook, d)
+  const v = JSON.parse(read(d, '.mcp.json')).mcpServers.vvibe
+  assert.equal(v.url, 'https://mcp.vvibe.ai', 'stale vvibe url must be canonicalized')
+  assert.ok(!v.headers, 'a committed Authorization header must be stripped (tokenless OAuth)')
+  assert.ok(!read(d, '.mcp.json').includes('Bearer'), 'no committed bearer token may survive')
+})
+
+check('playbook: a valid-but-wrong-shape .mcp.json is replaced, not crashed on', () => {
+  for (const bad of ['null', '42', '[]', '"x"']) {
+    const d = tmp()
+    fs.writeFileSync(path.join(d, '.mcp.json'), bad)
+    run(SCRIPTS.playbook, d) // must not throw
+    const j = JSON.parse(read(d, '.mcp.json'))
+    assert.equal(j.mcpServers?.vvibe?.url, 'https://mcp.vvibe.ai', `shape "${bad}" should be replaced with the canonical config`)
+  }
+})
+
 // ── write_marker invariants ────────────────────────────────────────────────
 check('marker: idempotent — two runs leave exactly one block', () => {
   const d = tmp()
@@ -174,6 +197,16 @@ check('marker: claims payments once a portaly skill is vendored', () => {
   seedSkills(d, ['vvibe-analytics', 'portaly-payment'])
   run(SCRIPTS.marker, d)
   assert.ok(/payments/.test(read(d, 'AGENTS.md')))
+})
+
+check('marker: product-only stack names portaly-product, not portaly-payment', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics', 'portaly-product'])
+  run(SCRIPTS.marker, d)
+  const m = read(d, 'AGENTS.md')
+  // The MCP note must reference the skill that actually vendored, not the other one.
+  assert.ok(m.includes('`portaly-product`'), 'product-only marker should name portaly-product')
+  assert.ok(!m.includes('register the `portaly-payment`'), 'product-only marker must not tell the user to register portaly-payment')
 })
 
 // ── detect is read-only ────────────────────────────────────────────────────
