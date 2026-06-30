@@ -200,22 +200,54 @@ function upsertEnvExample() {
   return 'merged vvibe vars into existing .env.example'
 }
 
-function upsertMcpJson() {
-  const abs = path.join(root, '.mcp.json')
-  if (fs.existsSync(abs)) {
-    try {
-      const j = JSON.parse(fs.readFileSync(abs, 'utf8'))
-      j.mcpServers = j.mcpServers || {}
-      if (j.mcpServers.vvibe) return '.mcp.json already has vvibe server — left as-is'
-      j.mcpServers.vvibe = { type: 'http', url: 'https://mcp.vvibe.ai' }
-      fs.writeFileSync(abs, `${JSON.stringify(j, null, 2)}\n`)
-      return 'merged vvibe server into existing .mcp.json'
-    } catch {
-      // ponytail: unparseable .mcp.json → fall through and replace it
-    }
+// This starter standardizes on the VVibe MCP. A *standalone* Portaly MCP
+// (`@portaly-ai/portaly-mcp`, an `mcp_ptly_…` token, usually keyed `portaly-vibe`) is
+// real but LEGACY here — operate Portaly through VVibe's `vibe_*` tools instead. So
+// reconcile it OUT of the MCP config; otherwise the starter ships two MCPs and agents
+// follow the legacy one. (We never claim "Portaly has no MCP" — we just don't wire it.)
+function isLegacyPortalyMcp(name, server) {
+  if (name === 'portaly-vibe' || name === 'portaly') return true
+  const args = Array.isArray(server?.args) ? server.args.join(' ') : ''
+  if (/@portaly-ai\/portaly-mcp/.test(args)) return true
+  if (server?.env && Object.prototype.hasOwnProperty.call(server.env, 'PORTALY_API_TOKEN')) return true
+  return false
+}
+
+function reconcileMcpFile(file, { createIfMissing }) {
+  const abs = path.join(root, file)
+  if (!fs.existsSync(abs)) {
+    if (!createIfMissing) return null
+    fs.writeFileSync(abs, MCP_JSON)
+    return `${file}: wrote (vvibe only)`
   }
-  fs.writeFileSync(abs, MCP_JSON)
-  return 'wrote .mcp.json'
+  let j
+  try {
+    j = JSON.parse(fs.readFileSync(abs, 'utf8'))
+  } catch {
+    if (!createIfMissing) return `${file}: unparseable — left as-is`
+    fs.writeFileSync(abs, MCP_JSON)
+    return `${file}: replaced unparseable file`
+  }
+  j.mcpServers = j.mcpServers || {}
+  const removed = Object.keys(j.mcpServers).filter((n) => isLegacyPortalyMcp(n, j.mcpServers[n]))
+  for (const n of removed) delete j.mcpServers[n]
+  const hadVvibe = !!j.mcpServers.vvibe
+  if (!hadVvibe) j.mcpServers.vvibe = { type: 'http', url: 'https://mcp.vvibe.ai' }
+  fs.writeFileSync(abs, `${JSON.stringify(j, null, 2)}\n`)
+  const parts = []
+  if (!hadVvibe) parts.push('added vvibe server')
+  if (removed.length) parts.push(`removed legacy Portaly MCP (${removed.join(', ')})`)
+  if (!parts.length) parts.push('already canonical — left as-is')
+  return `${file}: ${parts.join('; ')}`
+}
+
+function upsertMcpJson() {
+  // .mcp.json is always present in the starter; .cursor/mcp.json only if the app uses it.
+  const results = [
+    reconcileMcpFile('.mcp.json', { createIfMissing: true }),
+    reconcileMcpFile('.cursor/mcp.json', { createIfMissing: false }),
+  ].filter(Boolean)
+  return results.join(' | ')
 }
 
 // README is the human's natural first read — inject a small delimited banner that

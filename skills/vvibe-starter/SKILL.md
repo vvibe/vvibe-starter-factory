@@ -106,8 +106,10 @@ committed. Strip any temporary key. Only then is the starter publishable.
   before finishing (phase F checks this).
 - This skill is the optimizer, not part of the product — it does not need to ship
   inside the produced starter (it's installed separately by whoever runs it).
-- Hardcode `vvibe.ai` / `portaly.cc`; note `VVIBE_API_HOST` / `PORTALY_API_HOST`
-  overrides exist for self-host forks (see each catalog's `PROVIDER.md`).
+- Hardcode the **API hosts** the code calls: `vvibe.ai` / `portaly.ai`. `portaly.cc`
+  is the **human** site (signup/dashboard) — never use it as an API host (it 404s).
+  `VVIBE_API_HOST` / `PORTALY_API_HOST` overrides exist for self-host forks (see each
+  catalog's `PROVIDER.md`).
 - **Currency & locale follow the payment rail.** The pre-installed showcase rail is
   **Portaly, which is TWD-only (TapPay)** → use **TWD + zh-TW** for the payment flow
   and match GA4 revenue currency to the actual charge. (A Stripe-based variant would

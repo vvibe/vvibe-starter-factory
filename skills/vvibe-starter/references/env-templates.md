@@ -61,6 +61,15 @@ the committed file:
 ```
 
 Notes:
+- **Legacy Portaly MCP is reconciled out.** VVibe is the canonical (and only) MCP this
+  starter wires. If the base app already configured a *standalone* Portaly MCP
+  (`@portaly-ai/portaly-mcp`, an `mcp_ptly_…` `PORTALY_API_TOKEN`, usually keyed
+  `portaly-vibe`), `write_playbook.mjs` removes that server from `.mcp.json` **and**
+  `.cursor/mcp.json` while adding `vvibe`. Portaly capabilities are reached through
+  VVibe's `vibe_*` tools (after registering `portaly-payment`); Portaly's standalone MCP
+  is real but legacy here. (The base app's MCP *docs* — e.g. a `docs/mcp-setup.md` — and
+  any `PORTALY_API_TOKEN` in `.env*` are not auto-rewritten; scrub those by hand if the
+  base app shipped them.)
 - **Cloud (default):** `https://mcp.vvibe.ai` is the public server URL — safe to commit
   because the token is never in the file; OAuth is per-forker and lives in the agent's
   own credential store after the browser login.

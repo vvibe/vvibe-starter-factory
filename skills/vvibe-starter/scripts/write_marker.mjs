@@ -52,6 +52,19 @@ const skillLines = installed.length
   : '- _(none detected — run the phase B install first)_'
 
 const hasPayments = installed.includes('portaly-payment') || installed.includes('portaly-product')
+// MCP note: VVibe is the canonical MCP. Only when Portaly is in the stack do we add the
+// legacy-standalone-Portaly-MCP disambiguation (otherwise it's irrelevant noise — and
+// would name `portaly-payment` in an analytics-only starter that never vendored it).
+const mcpNote = hasPayments
+  ? `> **MCP: this starter standardizes on VVibe.** Connect VVibe via one browser login
+> through the \`vvibe\` MCP server in \`.mcp.json\` — **no token to paste**. Operate
+> Portaly **through VVibe** (the \`vibe_*\` tools, available after you register the
+> \`portaly-payment\` skill). Portaly also ships a *standalone* MCP
+> (\`@portaly-ai/portaly-mcp\`, \`mcp_ptly_…\` token) — in this starter that path is
+> **legacy: don't wire it** (it's reconciled out of the MCP config). Checkout uses a
+> separate server-side \`PORTALY_API_KEY\`, not an MCP.`
+  : `> **MCP: this starter standardizes on VVibe.** Connect VVibe via one browser login
+> through the \`vvibe\` MCP server in \`.mcp.json\` — **no token to paste**.`
 const stackLine = hasPayments ? '**VVibe** + **Portaly** creator stacks' : '**VVibe** creator stack'
 const capabilities = `analytics, members, email, blog${hasPayments ? ', payments' : ''}`
 const accountsLine = hasPayments ? 'their own VVibe + Portaly accounts' : 'their own VVibe account'
@@ -98,10 +111,7 @@ const BLOCK = `${START}
 in this repo, a new user's first task is onboarding: read
 [\`VVIBE_STARTER.md\`](VVIBE_STARTER.md) and help them connect ${accountsLine}.
 
-> **Canonical VVibe connect:** one browser login via the \`vvibe\` MCP server in
-> \`.mcp.json\` — **no token to paste**. This supersedes any older "VVibe/Vibe via
-> \`mcp_ptly_…\` token" instructions elsewhere in this repo. (A separate Portaly MCP,
-> if present, keeps its own token — that's unrelated to connecting VVibe.)
+${mcpNote}
 
 This starter ships with the ${stackLine} pre-installed.
 If you're an AI agent working in this repo, you can operate the creator's business

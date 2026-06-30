@@ -32,6 +32,12 @@ checkout. The example below shows the full-install case:
 <!-- vvibe:start -->
 ## ⚡ This project is vvibe-optimized
 
+> **MCP: this starter standardizes on VVibe.** Connect VVibe via one browser login
+> through the `vvibe` MCP server in `.mcp.json` (no token to paste); operate Portaly
+> **through VVibe** (`vibe_*` tools, after registering `portaly-payment`). Portaly's
+> *standalone* MCP (`@portaly-ai/portaly-mcp`, `mcp_ptly_…` token) is **legacy here —
+> don't wire it**; phase E reconciles it out of `.mcp.json` / `.cursor/mcp.json`.
+
 This starter ships with the **VVibe** + **Portaly** creator stacks pre-installed.
 If you're an AI agent working in this repo, you can operate the creator's business
 (analytics, members, email, blog, payments) through these skills.
