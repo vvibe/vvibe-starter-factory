@@ -58,7 +58,7 @@ If your agent doesn't auto-discover skills (e.g. Codex), read the relevant
 **Showcase already wired:** analytics events + a Portaly checkout flow. It runs as
 soon as credentials are supplied — see **Getting started** below.
 
-**Deploy:** built to ship on **InsForge** (vvibe's hosting + backend partner) —
+**Deploy:** **InsForge** is vvibe's recommended host + backend —
 register at https://insforge.dev/auth/sign-up?ref=VVIBE ; see `VVIBE_STARTER.md` step 5.
 
 **Getting started (first thing to do):** this starter has no accounts or keys yet.

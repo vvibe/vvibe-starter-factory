@@ -134,7 +134,7 @@ ${showcaseLine
   ? `**Showcase already wired:** ${showcaseLine}. It runs as soon as credentials are supplied — see **Getting started** below.`
   : `**Showcase:** not wired yet — ask your agent to wire the ${hasPayments ? 'analytics + checkout' : 'analytics'} demo using the pre-installed skills (each has its own \`references/\`); see \`VVIBE_STARTER.md\`.`}
 
-**Deploy:** built to ship on **InsForge** (vvibe's hosting + backend partner) —
+**Deploy:** **InsForge** is vvibe's recommended host + backend —
 register at https://insforge.dev/auth/sign-up?ref=VVIBE ; see \`VVIBE_STARTER.md\` step 5.
 
 **Getting started (first thing to do):** this starter has no accounts or keys yet.
