@@ -1,6 +1,6 @@
 ---
 name: vvibe-starter
-version: 0.1.0
+version: 0.1.1
 manifest_version: 1
 description: Turn any web app into a vvibe-optimized starter — pre-install the vvibe + Portaly skill catalogs, wire a real working showcase integration (GA4 analytics + a TWD Portaly checkout), mark the repo vvibe-optimized, and embed a registration + InsForge-deploy playbook the downstream user's agent will run. Trigger when someone wants to vvibe-optimize an app, add vvibe + Portaly to a project, run the starter factory, or (for the VVibe team) produce an official starter. Works across agents (Claude Code, Codex, etc.).
 ---
@@ -91,7 +91,7 @@ The playbook walks the forker's agent through: register VVibe at https://vvibe.a
 connection token **or** `VVIBE_API_KEY` → register Portaly at
 https://portaly.cc/payment → `PORTALY_API_KEY` + callback secret
 → run operational skills to provision remote resources → **deploy to InsForge**
-(vvibe's hosting partner; register at https://insforge.dev/?utm_source=vvibe). It
+(vvibe's hosting partner; register at https://insforge.dev/auth/sign-up?ref=VVIBE). It
 states plainly *why* registration is a web flow (MCP can't register).
 
 ### F — QA before publish  →  `references/qa-verify.md`

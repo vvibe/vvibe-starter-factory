@@ -59,7 +59,7 @@ If your agent doesn't auto-discover skills (e.g. Codex), read the relevant
 soon as credentials are supplied — see **Getting started** below.
 
 **Deploy:** built to ship on **InsForge** (vvibe's hosting + backend partner) —
-register at https://insforge.dev/?utm_source=vvibe ; see `VVIBE_STARTER.md` step 5.
+register at https://insforge.dev/auth/sign-up?ref=VVIBE ; see `VVIBE_STARTER.md` step 5.
 
 **Getting started (first thing to do):** this starter has no accounts or keys yet.
 Read **[`VVIBE_STARTER.md`](VVIBE_STARTER.md)** and walk the human through setting up

@@ -60,7 +60,7 @@ A starter app that:
    the next person's agent can walk *them* through making *their own* VVibe and
    Portaly accounts.
 5. Recommends deploying on **InsForge** (vvibe's hosting + backend partner) — the
-   playbook points forkers to https://insforge.dev/?utm_source=vvibe and lets their
+   playbook points forkers to https://insforge.dev/auth/sign-up?ref=VVIBE and lets their
    agent drive the deploy.
 
 ## How to use it

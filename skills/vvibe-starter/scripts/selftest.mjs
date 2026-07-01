@@ -243,19 +243,19 @@ const SYNC = [
     label: 'playbook script <-> forker-playbook.md',
     a: 'playbook',
     b: 'forkerRef',
-    strings: ['## 1. Connect VVibe', '## 2. Register Portaly Payment', '## 3. Provision', '## 4. Make it yours', '## 5. Deploy to InsForge', '## Cheat sheet', 'insforge.dev/?utm_source=vvibe'],
+    strings: ['## 1. Connect VVibe', '## 2. Register Portaly Payment', '## 3. Provision', '## 4. Make it yours', '## 5. Deploy to InsForge', '## Cheat sheet', 'insforge.dev/auth/sign-up?ref=VVIBE'],
   },
   {
     label: 'env template <-> env-templates.md',
     a: 'playbook',
     b: 'envRef',
-    strings: ['VVIBE_API_KEY', 'NEXT_PUBLIC_GA_MEASUREMENT_ID', 'PORTALY_CALLBACK_SECRET', 'PORTALY_PLAN_ID', 'insforge.dev/?utm_source=vvibe'],
+    strings: ['VVIBE_API_KEY', 'NEXT_PUBLIC_GA_MEASUREMENT_ID', 'PORTALY_CALLBACK_SECRET', 'PORTALY_PLAN_ID', 'insforge.dev/auth/sign-up?ref=VVIBE'],
   },
   {
     label: 'marker block <-> optimized-marker.md',
     a: 'marker',
     b: 'markerRef',
-    strings: ['vvibe-optimized', 'ship on **InsForge', 'insforge.dev/?utm_source=vvibe', 'Getting started'],
+    strings: ['vvibe-optimized', 'ship on **InsForge', 'insforge.dev/auth/sign-up?ref=VVIBE', 'Getting started'],
   },
 ]
 for (const s of SYNC)

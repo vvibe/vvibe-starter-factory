@@ -95,7 +95,7 @@ in sync.
 > ## 5. Deploy to InsForge (recommended)
 > **InsForge** is vvibe's hosting partner — it deploys this app and can be your
 > backend (database, auth, storage, functions) as you build past the showcase.
-> 1. Sign up at **https://insforge.dev/?utm_source=vvibe** (free to start).
+> 1. Sign up at **https://insforge.dev/auth/sign-up?ref=VVIBE** (free to start).
 > 2. Deploy with the InsForge CLI — or, if your agent has the **insforge** /
 >    **insforge-cli** skill, ask it to deploy this starter; it provisions your
 >    project and pushes the frontend, writing its own config.
@@ -109,7 +109,7 @@ in sync.
 > | VVibe key (self-host / REST) | VVibe dashboard → API keys |
 > | Portaly account | https://portaly.cc/payment |
 > | Portaly key + callback secret | Portaly dashboard → creator-subscription |
-> | Deploy / hosting | InsForge — https://insforge.dev/?utm_source=vvibe |
+> | Deploy / hosting | InsForge — https://insforge.dev/auth/sign-up?ref=VVIBE |
 > | What's wired & where | the `## ⚡ vvibe-optimized` block in `AGENTS.md` |
 
 ---

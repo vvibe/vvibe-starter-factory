@@ -135,7 +135,7 @@ ${showcaseLine
   : `**Showcase:** not wired yet — ask your agent to wire the ${hasPayments ? 'analytics + checkout' : 'analytics'} demo using the pre-installed skills (each has its own \`references/\`); see \`VVIBE_STARTER.md\`.`}
 
 **Deploy:** built to ship on **InsForge** (vvibe's hosting + backend partner) —
-register at https://insforge.dev/?utm_source=vvibe ; see \`VVIBE_STARTER.md\` step 5.
+register at https://insforge.dev/auth/sign-up?ref=VVIBE ; see \`VVIBE_STARTER.md\` step 5.
 
 **Getting started (first thing to do):** this starter has no accounts or keys yet.
 Read **[\`VVIBE_STARTER.md\`](VVIBE_STARTER.md)** and walk the human through setting up

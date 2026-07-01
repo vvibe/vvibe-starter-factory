@@ -32,7 +32,7 @@ PORTALY_PLAN_ID=
 # PORTALY_API_HOST=
 
 # ── InsForge (recommended host / backend) ────────────────────────────────
-# Register at https://insforge.dev/?utm_source=vvibe . Deploy with the insforge
+# Register at https://insforge.dev/auth/sign-up?ref=VVIBE . Deploy with the insforge
 # skill / CLI — it provisions your project and writes the InsForge config
 # (project URL + key) for you. See VVIBE_STARTER.md step 5.
 ```
