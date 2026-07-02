@@ -32,6 +32,14 @@ checkout. The example below shows the full-install case:
 <!-- vvibe:start -->
 ## ⚡ This project is vvibe-optimized
 
+**Agents — read this first.** When a new user asks what this project is or how to
+launch it, [`VVIBE_STARTER.md`](VVIBE_STARTER.md) is the setup source of truth. Keep
+two things separate — **never present connecting VVibe as a blocker to launch:**
+- **Get the app live** — deploy + your real backend / auth / data (`VVIBE_STARTER.md`
+  step 5). Needs **no** VVibe MCP and no VVibe login.
+- **Connect VVibe** — an **optional** business layer (members, email, blog, analytics
+  dashboard). Wire it whenever, before *or* after launch — never a prerequisite.
+
 > **MCP: this starter standardizes on VVibe.** Connect VVibe via one browser login
 > through the `vvibe` MCP server in `.mcp.json` (no token to paste); operate Portaly
 > **through VVibe** (`vibe_*` tools, after registering `portaly-payment`). Portaly's
@@ -56,24 +64,32 @@ If your agent doesn't auto-discover skills (e.g. Codex), read the relevant
 `SKILL.md` in those folders when doing related work.
 
 **Showcase already wired:** analytics events + a Portaly checkout flow. It runs as
-soon as credentials are supplied — see **Getting started** below.
+soon as credentials are supplied — see `VVIBE_STARTER.md`.
 
 **Deploy:** **InsForge** is vvibe's recommended host + backend —
 register at https://insforge.dev/auth/sign-up?ref=VVIBE ; see `VVIBE_STARTER.md` step 5.
 
-**Getting started (first thing to do):** this starter has no accounts or keys yet.
-Read **[`VVIBE_STARTER.md`](VVIBE_STARTER.md)** and walk the human through setting up
-their own VVibe + Portaly accounts. **Connecting VVibe is YOUR job, not the human's —
-they only log in once in the browser.** If you already have `vibe_*` tools (this
-starter pre-wires `.mcp.json` for Claude Code), just call `vibe_heartbeat`; if you
-don't (e.g. Cursor / Codex), run `npx @vvibe/cli connect --server=https://mcp.vvibe.ai`
-YOURSELF to wire up, then call it. That first call opens ONE browser login that creates
-the account, provisions the workspace, and authorizes you — nothing to paste. Because
-the skills above are ALREADY installed in this repo, right after connecting call
-`vibe_report_skill_installed` for each (read its `version:` from the skill's SKILL.md)
-so VVibe registers them, turns on their `vibe_*` tools, and marks onboarding complete.
-Portaly payment still needs a quick web signup for a key. Then use the skills to
-provision resources and build out the product.
+**Connecting VVibe (optional — do it when the user wants the business layer, not as a
+launch gate).** Pick the path that matches your session:
+- **Interactive session (a human can click once):** you drive the wiring; the human's
+  only step is a single browser login. If you already have `vibe_*` tools (this starter
+  pre-wires `.mcp.json` for **Claude Code**), just call `vibe_heartbeat` — the first
+  call opens the login (the human may also run `/mcp`). On **Cursor / Codex**, first run
+  `npx @vvibe/cli connect --server=https://mcp.vvibe.ai` YOURSELF to write the server
+  into config (it only writes config — it does **not** log you in), then call it. That
+  one login creates the account, provisions the workspace, and authorizes you.
+- **Non-interactive / headless session (no one to open a browser):** you **cannot**
+  finish the OAuth login here, and no CLI changes that — it is a browser step. Don't
+  block on it: either ask the human to do the one-time login in an interactive session,
+  **or** make progress now over REST — put a VVibe API key (`pcs_test_…` / `pcs_live_…`
+  from https://vvibe.ai) in `.env` as `VVIBE_API_KEY`. Member sync, analytics, and
+  product-brain work over REST with no browser; email + blog are MCP-only and wait for
+  the interactive login.
+
+Once connected via MCP, register the pre-installed skills so VVibe turns on their tools:
+for **each** VVibe skill folder call `vibe_report_skill_installed` (read its `version:`
+from that skill's `SKILL.md`). Portaly payment needs its own quick web signup for a key
+(`VVIBE_STARTER.md` step 2).
 <!-- vvibe:end -->
 ```
 
