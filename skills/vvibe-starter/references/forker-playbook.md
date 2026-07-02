@@ -36,34 +36,36 @@ in sync.
 > > manual route is the linked dashboard — and for VVibe, use the **API-key path**
 > > (step 1, "prefer a key?") instead of the one-click MCP login.
 >
-> ## 1. Connect VVibe (≈1 min, one login)
-> 1. Nothing to paste — `.mcp.json` is pre-pointed at `https://mcp.vvibe.ai`.
-> 2. Trigger the connection: restart your agent (or run its MCP connect — e.g.
->    `/mcp` in Claude Code), or just ask it to call a `vibe_*` tool like
->    `vibe_heartbeat`.
-> 3. Your agent opens a browser to **https://vvibe.ai** → **sign up or log in once**
+> ## 1. Connect VVibe (~1 min — you just log in once)
+> **You do exactly one thing: a single browser login. Your agent does the wiring —
+> you never type a connect command.** Just tell it to get started; here's what it does:
+> 1. **Already has `vibe_*` tools?** This starter pre-wires `.mcp.json` for **Claude
+>    Code**, so the agent just calls `vibe_heartbeat`.
+> 2. **Doesn't?** (**Cursor** / **Codex**, whose config isn't `.mcp.json`) — the agent
+>    runs `npx @vvibe/cli connect --server=https://mcp.vvibe.ai` **itself** to wire up
+>    (reload if prompted), then calls `vibe_heartbeat`. This is the agent's job, not
+>    yours — don't type it.
+> 3. That first call opens a browser to **https://vvibe.ai** → **sign up or log in once**
 >    (Google / magic link — no card). That one login *is* your onboarding: it creates
->    your account, sets up your workspace, and authorizes this agent. No token to copy.
-> 4. Confirm the `vibe_*` tools now work (the agent can call `vibe_heartbeat`).
-> 5. **Register the pre-installed skills.** This starter already ships the VVibe
->    skills in `.claude/skills/` and `.agents/skills/`, so they were never "installed" through VVibe — it
->    doesn't know about them yet, and each skill's `vibe_*` tools stay hidden until
->    you say so. Right after connecting, for **each** VVibe skill folder, have your
->    agent call `vibe_report_skill_installed` (it reads the `version:` from that
->    skill's `SKILL.md`). That registers them, turns on their tools (e.g.
->    `vibe_list_members`), and marks your onboarding complete. (A couple differ:
->    **analytics** connects your Google Analytics via a hosted click; **blog-render**
->    is read-only.)
+>    your account, sets up your workspace, and authorizes the agent. No token to copy.
+> 4. Once `vibe_heartbeat` works, the agent **registers the pre-installed skills** for
+>    you: this starter ships the VVibe skills in `.claude/skills/` and `.agents/skills/`,
+>    so VVibe doesn't know about them yet and their `vibe_*` tools stay hidden until
+>    it's told. For **each** VVibe skill folder the agent calls
+>    `vibe_report_skill_installed` (reading the `version:` from that skill's
+>    `SKILL.md`), which turns on their tools (e.g. `vibe_list_members`) and marks
+>    onboarding complete. (Two differ: **analytics** connects your Google Analytics via
+>    a hosted click; **blog-render** is read-only.)
 >
 > **No AI agent? (or self-host / prefer a key)** Skip the MCP one-click entirely:
 > create a **VVibe API key** (`pcs_test_…` / `pcs_live_…`) in the dashboard at
 > https://vvibe.ai and put `VVIBE_API_KEY=…` in `.env`. That's the whole VVibe
-> connect for a human — you can ignore sub-step 5 (skill registration turns on the
+> connect for a human — you can ignore sub-step 4 (skill registration turns on the
 > `vibe_*` tools, which only an agent uses). Self-hosters on a token-only host
 > (`MCP_OAUTH_ENABLED` off) do the same, or paste an MCP connection token into
 > `.mcp.json` as a `Bearer` header. Keep secrets out of git.
 >
-> ## 2. Register Portaly Payment (≈3 min)
+> ## 2. Register Portaly Payment (~3 min)
 > 1. Go to **https://portaly.cc/payment** and create an account.
 > 2. In the Portaly dashboard, issue an API key + **callback secret**. Start with a
 >    **test** key (`pcs_test_…`) — TapPay sandbox, no real charges.
