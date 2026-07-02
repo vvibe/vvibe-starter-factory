@@ -63,13 +63,17 @@ register at https://insforge.dev/auth/sign-up?ref=VVIBE ; see `VVIBE_STARTER.md`
 
 **Getting started (first thing to do):** this starter has no accounts or keys yet.
 Read **[`VVIBE_STARTER.md`](VVIBE_STARTER.md)** and walk the human through setting up
-their own VVibe + Portaly accounts. VVibe connects in ONE browser login — the agent
-opens it, nothing to paste. Because the skills above are ALREADY installed in this
-repo, right after connecting call `vibe_report_skill_installed` for each (read its
-`version:` from the skill's SKILL.md) so VVibe registers them, turns on their
-`vibe_*` tools, and marks onboarding complete. Portaly payment still needs a quick
-web signup for a key. Then use the skills to provision resources and build out the
-product.
+their own VVibe + Portaly accounts. **Connecting VVibe is YOUR job, not the human's —
+they only log in once in the browser.** If you already have `vibe_*` tools (this
+starter pre-wires `.mcp.json` for Claude Code), just call `vibe_heartbeat`; if you
+don't (e.g. Cursor / Codex), run `npx @vvibe/cli connect --server=https://mcp.vvibe.ai`
+YOURSELF to wire up, then call it. That first call opens ONE browser login that creates
+the account, provisions the workspace, and authorizes you — nothing to paste. Because
+the skills above are ALREADY installed in this repo, right after connecting call
+`vibe_report_skill_installed` for each (read its `version:` from the skill's SKILL.md)
+so VVibe registers them, turns on their `vibe_*` tools, and marks onboarding complete.
+Portaly payment still needs a quick web signup for a key. Then use the skills to
+provision resources and build out the product.
 <!-- vvibe:end -->
 ```
 
