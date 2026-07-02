@@ -23,27 +23,32 @@ skills already in \`.claude/skills/\`. The showcase code is real — it starts w
 the moment you plug in your own accounts. This file walks you (or your AI agent)
 through that.
 
-**VVibe connects in one browser login — no token to copy.** \`.mcp.json\` already
-points your agent at the VVibe MCP server. The first time the agent uses it, it
-opens a browser where you **sign up or log in once**; that single step creates
-your VVibe account, provisions your workspace, and authorizes the agent. Payment
-(Portaly) still needs its own quick web signup for a key — see step 2.
+**VVibe is an optional business layer — not required to launch.** You can deploy this
+app (step 5) with no VVibe connection at all. Connect VVibe when you want its members /
+email / blog / analytics features: in an interactive session it's a one-time browser
+login (no token to copy); in a headless setup, use a REST API key instead. Payment
+(Portaly) needs its own quick web signup for a key — see step 2.
 
 > **No AI agent? Do it by hand.** Every step below works manually: sign up at the
 > linked sites, paste keys into \`.env\`, and deploy from the InsForge dashboard. The
 > agent path just automates the clicks. Where a step says "ask your agent", the
 > manual route is the linked dashboard — and for VVibe, use the **API-key path**
-> (step 1, "prefer a key?") instead of the one-click MCP login.
+> (step 1, non-interactive) instead of the one-click MCP login.
 
-## 1. Connect VVibe (~1 min — you just log in once)
-**You do exactly one thing: a single browser login. Your agent does the wiring —
-you never type a connect command.** Just tell it to get started; here's what it does:
-1. **Already has \`vibe_*\` tools?** This starter pre-wires \`.mcp.json\` for **Claude
-   Code**, so the agent just calls \`vibe_heartbeat\`.
-2. **Doesn't?** (**Cursor** / **Codex**, whose config isn't \`.mcp.json\`) — the agent
-   runs \`npx @vvibe/cli connect --server=https://mcp.vvibe.ai\` **itself** to wire up
-   (reload if prompted), then calls \`vibe_heartbeat\`. This is the agent's job, not
-   yours — don't type it.
+## 1. Connect VVibe (optional — the business layer)
+VVibe powers members, email, blog, and the analytics dashboard. It is **not** needed to
+get the app live — skip to step 5 if you just want to deploy. Connect it whenever you
+want those features. There are two paths; pick the one that matches how your agent runs.
+
+**Interactive session (a human can click once) — the one-browser-login path.** Your
+agent does the wiring; your only step is a single browser login. Just tell it to get
+started; here's what it does:
+1. **Claude Code** — \`.mcp.json\` already wires the VVibe MCP server, so the agent just
+   calls \`vibe_heartbeat\`. (You can also run \`/mcp\` to authorize it.)
+2. **Cursor / Codex** (config isn't \`.mcp.json\`) — the agent first runs
+   \`npx @vvibe/cli connect --server=https://mcp.vvibe.ai\` **itself** to write the server
+   into your config (reload if prompted; it only writes config — it does *not* log you
+   in), then calls \`vibe_heartbeat\`. This is the agent's job — don't type it.
 3. That first call opens a browser to **https://vvibe.ai** → **sign up or log in once**
    (Google / magic link — no card). That one login *is* your onboarding: it creates
    your account, sets up your workspace, and authorizes the agent. No token to copy.
@@ -55,13 +60,15 @@ you never type a connect command.** Just tell it to get started; here's what it 
    (e.g. \`vibe_list_members\`) and marks onboarding complete. (Two differ: **analytics**
    connects your Google Analytics via a hosted click; **blog-render** is read-only.)
 
-**No AI agent? (or self-host / prefer a key)** Skip the MCP one-click entirely:
-create a **VVibe API key** (\`pcs_test_…\` / \`pcs_live_…\`) in the dashboard at
-https://vvibe.ai and put \`VVIBE_API_KEY=…\` in \`.env\`. That's the whole VVibe connect
-for a human — you can ignore sub-step 4 (skill registration turns on the \`vibe_*\`
-tools, which only an agent uses). Self-hosters on a token-only host (\`MCP_OAUTH_ENABLED\`
-off) do the same, or paste an MCP connection token into \`.mcp.json\` as a \`Bearer\`
-header. Keep secrets out of git.
+**Non-interactive / headless session (no browser) — the API-key path.** A browser login
+can't be completed without a human, and the CLI won't change that (it only writes
+config). Don't block on it — create a **VVibe API key** (\`pcs_test_…\` / \`pcs_live_…\`) in
+the dashboard at https://vvibe.ai and put \`VVIBE_API_KEY=…\` in \`.env\`. Member sync,
+analytics, and product-brain work over REST with no browser; email and blog are MCP-only,
+so they wait for a one-time interactive login (skill registration in sub-step 4 turns on
+the \`vibe_*\` tools, which only an agent uses). Self-hosters on a token-only host
+(\`MCP_OAUTH_ENABLED\` off) use the same key path, or paste an MCP connection token into
+\`.mcp.json\` as a \`Bearer\` header. Keep secrets out of git.
 
 ## 2. Register Portaly Payment (~3 min)
 1. Go to **https://portaly.cc/payment** and create an account.
@@ -105,8 +112,8 @@ backend (database, auth, storage, functions) as you build past the showcase.
 ## Cheat sheet
 | Need | Where |
 |---|---|
-| VVibe connect | one browser login — agent opens it, no token to copy |
-| VVibe key (self-host / REST) | VVibe dashboard → API keys |
+| VVibe connect (interactive) | agent drives; one browser login, no token to copy |
+| VVibe connect (headless / REST) | \`VVIBE_API_KEY\` in \`.env\` — from the VVibe dashboard, no browser |
 | Portaly account | https://portaly.cc/payment |
 | Portaly key + callback secret | Portaly dashboard → creator-subscription |
 | Deploy / hosting | InsForge — https://insforge.dev/auth/sign-up?ref=VVIBE |

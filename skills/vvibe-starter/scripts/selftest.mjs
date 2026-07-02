@@ -255,7 +255,7 @@ const SYNC = [
     label: 'marker block <-> optimized-marker.md',
     a: 'marker',
     b: 'markerRef',
-    strings: ['vvibe-optimized', 'recommended host + backend', 'insforge.dev/auth/sign-up?ref=VVIBE', 'Getting started', 'npx @vvibe/cli connect'],
+    strings: ['vvibe-optimized', 'recommended host + backend', 'insforge.dev/auth/sign-up?ref=VVIBE', 'Connecting VVibe', 'npx @vvibe/cli connect'],
   },
 ]
 for (const s of SYNC)
