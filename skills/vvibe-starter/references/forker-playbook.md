@@ -36,7 +36,7 @@ in sync.
 > > manual route is the linked dashboard — and for VVibe, use the **API-key path**
 > > (step 1, "prefer a key?") instead of the one-click MCP login.
 >
-> ## 1. Connect VVibe (≈1 min — you just log in once)
+> ## 1. Connect VVibe (~1 min — you just log in once)
 > **You do exactly one thing: a single browser login. Your agent does the wiring —
 > you never type a connect command.** Just tell it to get started; here's what it does:
 > 1. **Already has `vibe_*` tools?** This starter pre-wires `.mcp.json` for **Claude
@@ -65,7 +65,7 @@ in sync.
 > (`MCP_OAUTH_ENABLED` off) do the same, or paste an MCP connection token into
 > `.mcp.json` as a `Bearer` header. Keep secrets out of git.
 >
-> ## 2. Register Portaly Payment (≈3 min)
+> ## 2. Register Portaly Payment (~3 min)
 > 1. Go to **https://portaly.cc/payment** and create an account.
 > 2. In the Portaly dashboard, issue an API key + **callback secret**. Start with a
 >    **test** key (`pcs_test_…`) — TapPay sandbox, no real charges.
