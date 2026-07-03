@@ -110,6 +110,20 @@ const envIgnored = gitignore.split(/\r?\n/).some((l) => {
 })
 const committedEnv = exists('.env') // a real .env present in the tree is a red flag for a starter
 
+// ── neutrality / integration guard detection ─────────────────────────────
+// Neutral base-app templates often ship a guard that greps PRODUCT CODE for provider
+// strings and will REJECT the starter's onboarding artifacts (.mcp.json,
+// VVIBE_STARTER.md, provider env names) until reconciled. Flag it so the agent
+// reconciles before publish (see references/qa-verify.md). Read-only.
+const guardScripts = Object.entries(pkg.scripts || {})
+  .filter(([k, v]) => /neutral|integrat|guard|provider/i.test(k) || /neutral|integrat|provider/i.test(String(v)))
+  .map(([k]) => `npm run ${k}`)
+const guardFiles = listDir('scripts')
+  .filter((f) => /integrat|neutral|guard/i.test(f) && /\.(mjs|cjs|js|ts)$/.test(f))
+  .map((f) => `scripts/${f}`)
+const guardHits = [...new Set([...guardScripts, ...guardFiles])]
+const hasNeutralityGuard = guardHits.length > 0
+
 // ── report ───────────────────────────────────────────────────────────────
 const mark = (ok) => (ok ? 'DONE   ' : 'PENDING')
 const line = (ok, label, extra = '') => console.log(`  [${mark(ok)}] ${label}${extra ? ` — ${extra}` : ''}`)
@@ -138,12 +152,22 @@ console.log('\nHygiene (phase F preview)')
 line(envIgnored, '.env is git-ignored')
 line(!committedEnv, 'no real .env committed in tree', committedEnv ? 'WARNING: .env present — must not ship' : '')
 
+console.log('\nBase-app guards')
+if (hasNeutralityGuard) {
+  line(false, 'neutrality/integration guard present — reconcile for the starter', guardHits.join(', '))
+  console.log('           → allow-list .mcp.json / VVIBE_STARTER.md / .env.example provider names;')
+  console.log('             keep app code (src/, api/) neutral. See references/qa-verify.md.')
+} else {
+  line(true, 'no provider-neutrality guard detected')
+}
+
 const pending = [
   !hasVvibeSkills && 'B: install vvibe/vvibe-skills',
   !hasPortalySkills && 'B: install portaly-ai/portaly-skills',
   !hasShowcase && 'C: wire the showcase integration (see references/showcase-integration.md)',
   !hasMarker && 'D: run write_marker.mjs',
   !(hasPlaybook && hasEnvExample && hasMcpJson) && 'E: run write_playbook.mjs',
+  hasNeutralityGuard && 'Guard: reconcile the neutrality guard so it accepts onboarding artifacts (references/qa-verify.md)',
 ].filter(Boolean)
 
 console.log('\nNext:')

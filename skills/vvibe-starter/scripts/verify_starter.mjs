@@ -97,6 +97,12 @@ gate(
   read('.gitignore').split(/\r?\n/).some((l) => ['.env', '/.env', '.env*'].includes(l.trim())),
   '.env is git-ignored',
 )
+// The tokenless .mcp.json MUST reach forks — a base app that .gitignores it would
+// silently strip the #1 onboarding trigger. (The *.local.json overrides may stay ignored.)
+gate(
+  !read('.gitignore').split(/\r?\n/).some((l) => ['.mcp.json', '/.mcp.json', '.cursor/mcp.json', '/.cursor/mcp.json'].includes(l.trim())),
+  '.mcp.json is NOT git-ignored (forks must receive it)',
+)
 const filesToScan = ['VVIBE_STARTER.md', '.env.example', '.mcp.json', 'AGENTS.md', 'CLAUDE.md']
 const secretHit = filesToScan.map(read).join('\n').match(/pcs_(live|test)_[A-Za-z0-9]{16,}/)
 gate(secretHit == null, 'no real-looking key in shipped config', secretHit ? secretHit[0] : '')

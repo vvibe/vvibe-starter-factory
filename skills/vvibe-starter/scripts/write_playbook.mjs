@@ -23,11 +23,12 @@ skills already in \`.claude/skills/\`. The showcase code is real — it starts w
 the moment you plug in your own accounts. This file walks you (or your AI agent)
 through that.
 
-**VVibe is an optional business layer — not required to launch.** You can deploy this
-app (step 5) with no VVibe connection at all. Connect VVibe when you want its members /
-email / blog / analytics features: in an interactive session it's a one-time browser
-login (no token to copy); in a headless setup, use a REST API key instead. Payment
-(Portaly) needs its own quick web signup for a key — see step 2.
+**Start by connecting VVibe — that's what this starter is for.** The fastest path to
+value is to register + onboard VVibe (step 1) and Portaly payments (step 2). It is not a
+hard prerequisite — you *can* deploy (step 5) with no VVibe connection — but connecting is
+the primary path: in an interactive session it's a one-time browser login (no token to
+copy), and in a headless setup you use a REST API key instead. Payment (Portaly) needs
+its own quick web signup for a key — see step 2.
 
 > **No AI agent? Do it by hand.** Every step below works manually: sign up at the
 > linked sites, paste keys into \`.env\`, and deploy from the InsForge dashboard. The
@@ -35,10 +36,11 @@ login (no token to copy); in a headless setup, use a REST API key instead. Payme
 > manual route is the linked dashboard — and for VVibe, use the **API-key path**
 > (step 1, non-interactive) instead of the one-click MCP login.
 
-## 1. Connect VVibe (optional — the business layer)
-VVibe powers members, email, blog, and the analytics dashboard. It is **not** needed to
-get the app live — skip to step 5 if you just want to deploy. Connect it whenever you
-want those features. There are two paths; pick the one that matches how your agent runs.
+## 1. Connect VVibe (start here — the register + onboard flow)
+VVibe powers members, email, blog, and the analytics dashboard. Connecting is the main
+thing this starter sets you up to do — do it first. (It's not required just to *deploy*
+the app — step 5 works without it — but it's the primary path.) There are two ways to
+connect; pick the one that matches how your agent runs.
 
 **Interactive session (a human can click once) — the one-browser-login path.** Your
 agent does the wiring; your only step is a single browser login. Just tell it to get
@@ -186,6 +188,22 @@ function ensureEnvIgnored() {
   return existed ? 'appended .env to .gitignore' : 'created .gitignore with .env'
 }
 
+// ── ensure .mcp.json is NOT git-ignored ────────────────────────────────────
+// The starter ships a TOKENLESS .mcp.json (no secret) that forks MUST receive — it's
+// what wires the VVibe MCP for a cloner. Neutral base apps often .gitignore it, which
+// would silently strip the #1 onboarding trigger from every fork. Un-ignore the tracked
+// config files; keep the *.local.json personal-token overrides ignored.
+function ensureMcpTracked() {
+  const abs = path.join(root, '.gitignore')
+  if (!fs.existsSync(abs)) return 'no .gitignore'
+  const tracked = new Set(['.mcp.json', '/.mcp.json', '.cursor/mcp.json', '/.cursor/mcp.json'])
+  const lines = fs.readFileSync(abs, 'utf8').split(/\r?\n/)
+  const kept = lines.filter((l) => !tracked.has(l.trim()))
+  if (kept.length === lines.length) return '.mcp.json already tracked'
+  fs.writeFileSync(abs, kept.join('\n'))
+  return 'un-ignored .mcp.json / .cursor/mcp.json (forks need them)'
+}
+
 // ── merge (don't clobber) into a real base app's existing templates ─────────
 // A non-blank base app may already ship a richer .env.example / .mcp.json that
 // the app needs to boot. Augment those instead of overwriting them.
@@ -311,8 +329,10 @@ written.push(`.env.example (${upsertEnvExample()})`)
 written.push(`.mcp.json (${upsertMcpJson()})`)
 written.push(`README (${upsertReadmeBanner()})`)
 const gitignoreResult = ensureEnvIgnored()
+const mcpTrackResult = ensureMcpTracked()
 
 console.log('write_playbook.mjs:')
 for (const f of written) console.log(`  ${f}`)
-console.log(`  .gitignore: ${gitignoreResult}`)
+console.log(`  .gitignore (.env): ${gitignoreResult}`)
+console.log(`  .gitignore (.mcp.json): ${mcpTrackResult}`)
 console.log('  (placeholders only — no real secrets written)')

@@ -85,6 +85,17 @@ check('playbook: ensures .env is git-ignored', () => {
   )
 })
 
+check('playbook: un-ignores .mcp.json so forks receive it (keeps *.local.json ignored)', () => {
+  const d = tmp()
+  // Neutral base app that git-ignores its MCP config — the #1 fork trigger would vanish.
+  fs.writeFileSync(path.join(d, '.gitignore'), 'node_modules\n.mcp.json\n.mcp.local.json\n.cursor/mcp.json\n')
+  run(SCRIPTS.playbook, d)
+  const gi = read(d, '.gitignore').split(/\r?\n/).map((l) => l.trim())
+  assert.ok(!gi.includes('.mcp.json'), '.mcp.json must be un-ignored (forks need it)')
+  assert.ok(!gi.includes('.cursor/mcp.json'), '.cursor/mcp.json must be un-ignored')
+  assert.ok(gi.includes('.mcp.local.json'), 'personal *.local.json override must stay ignored')
+})
+
 check('playbook: no real-looking secret in any produced file', () => {
   const d = tmp()
   run(SCRIPTS.playbook, d)
