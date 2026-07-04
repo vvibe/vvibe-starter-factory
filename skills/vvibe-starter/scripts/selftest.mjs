@@ -269,7 +269,7 @@ const SYNC = [
     label: 'playbook script <-> forker-playbook.md',
     a: 'playbook',
     b: 'forkerRef',
-    strings: ['## 1. Connect VVibe', '## 2. Register Portaly Payment', '## 3. Provision', '## 4. Make it yours', '## 5. Deploy to InsForge', '## Cheat sheet', 'insforge.dev/auth/sign-up?ref=VVIBE', 'npx @vvibe/cli connect'],
+    strings: ['## 1. Connect VVibe', '## 2. Register Portaly Payment', '## 3. Provision', '## 4. Make it yours', '## 5. Deploy to InsForge', '## Cheat sheet', 'insforge.dev/auth/sign-up?ref=VVIBE', 'npx @vvibe/cli connect', 'vibe_update_brand', 'vibe_get_brand'],
   },
   {
     label: 'env template <-> env-templates.md',
@@ -281,7 +281,7 @@ const SYNC = [
     label: 'marker block <-> optimized-marker.md',
     a: 'marker',
     b: 'markerRef',
-    strings: ['vvibe-optimized', 'recommended host + backend', 'insforge.dev/auth/sign-up?ref=VVIBE', 'Connecting VVibe', 'npx @vvibe/cli connect'],
+    strings: ['vvibe-optimized', 'recommended host + backend', 'insforge.dev/auth/sign-up?ref=VVIBE', 'Connecting VVibe', 'npx @vvibe/cli connect', 'vibe_update_brand', 'vibe_get_brand'],
   },
 ]
 for (const s of SYNC)
