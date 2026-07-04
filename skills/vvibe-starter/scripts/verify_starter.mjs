@@ -50,6 +50,24 @@ const gate = (ok, label, detail = '') => {
 }
 const warn = (label) => console.log(`  [WARN] ${label}`)
 
+// Does a fork actually receive this path? A tracked file always ships; otherwise it
+// ships iff git's OWN ignore rules don't exclude it. Using git (not a literal-line
+// scan) catches globs / directory ignores like `*.json` or `.cursor/` that a naive
+// line match would miss. Non-git dir → assume yes (can't tell — don't false-fail).
+const git = (cmd) => execSync(`git ${cmd}`, { cwd: root, stdio: 'pipe' })
+function reachesForks(rel) {
+  try {
+    git(`ls-files --error-unmatch "${rel}"`)
+    return true // tracked → forks get it regardless of .gitignore
+  } catch {}
+  try {
+    git(`check-ignore -q -- "${rel}"`)
+    return false // not tracked AND ignored → forks won't get it
+  } catch {
+    return true // not ignored (or not a git repo) → stageable → ships after commit
+  }
+}
+
 console.log(`\nverify_starter — ${root}\n`)
 
 // 1. Marker present and singular -------------------------------------------
@@ -97,6 +115,12 @@ gate(
   read('.gitignore').split(/\r?\n/).some((l) => ['.env', '/.env', '.env*'].includes(l.trim())),
   '.env is git-ignored',
 )
+// The tokenless .mcp.json MUST reach forks — a base app that .gitignores it would
+// silently strip the #1 onboarding trigger. Check git's real ignore semantics, not
+// literal lines. (The *.local.json overrides may stay ignored.)
+gate(reachesForks('.mcp.json'), '.mcp.json reaches forks (tracked or not git-ignored)')
+if (exists('.cursor/mcp.json'))
+  gate(reachesForks('.cursor/mcp.json'), '.cursor/mcp.json reaches forks (tracked or not git-ignored)')
 const filesToScan = ['VVIBE_STARTER.md', '.env.example', '.mcp.json', 'AGENTS.md', 'CLAUDE.md']
 const secretHit = filesToScan.map(read).join('\n').match(/pcs_(live|test)_[A-Za-z0-9]{16,}/)
 gate(secretHit == null, 'no real-looking key in shipped config', secretHit ? secretHit[0] : '')

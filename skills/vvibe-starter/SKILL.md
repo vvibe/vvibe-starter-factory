@@ -56,8 +56,9 @@ It is read-only and prints a done/pending checklist: detected stack (Next.js App
 Router **or** a Vite SPA + InsForge edge functions — phase C wires the showcase
 per the detected stack), presence of `AGENTS.md`/`CLAUDE.md`, whether the two skill
 packs are already vendored, whether the marker block and forker playbook already
-exist, and whether `.env.example` / `.mcp.json` templates are present. Do only the
-pending items.
+exist, whether `.env.example` / `.mcp.json` templates are present, and whether the base
+app ships a **provider-neutrality guard** (a `check:integrations`-style script that will
+reject the onboarding artifacts unless reconciled — phase F). Do only the pending items.
 
 ### B — Pre-install both catalogs ("預裝")  →  `references/install.md`
 Install `vvibe/vvibe-skills` and `portaly-ai/portaly-skills` into the starter and
@@ -95,9 +96,11 @@ https://portaly.cc/payment → `PORTALY_API_KEY` + callback secret
 states plainly *why* registration is a web flow (MCP can't register).
 
 ### F — QA before publish  →  `references/qa-verify.md`
-Build the starter, optionally smoke-test with a **throwaway** test key (never
-committed), then run gitleaks / the `vvibe-sentry` skill to assert no secrets are
-committed. Strip any temporary key. Only then is the starter publishable.
+Build the starter and **reconcile any base-app neutrality guard** flagged in phase A so
+`check:integrations` (or equivalent) goes green *with* the onboarding artifacts present
+(allow-list them; keep app code neutral). Optionally smoke-test with a **throwaway** test
+key (never committed), then run gitleaks / the `vvibe-sentry` skill to assert no secrets
+are committed. Strip any temporary key. Only then is the starter publishable.
 
 ## 3. Guardrails
 
