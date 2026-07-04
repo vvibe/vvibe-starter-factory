@@ -96,6 +96,21 @@ check('playbook: un-ignores .mcp.json so forks receive it (keeps *.local.json ig
   assert.ok(gi.includes('.mcp.local.json'), 'personal *.local.json override must stay ignored')
 })
 
+check('playbook: un-ignores .mcp.json even under a broader pattern (git semantics)', () => {
+  const d = tmp()
+  execFileSync('git', ['init', '-q'], { cwd: d })
+  // A glob a literal-line strip would miss — git still ignores .mcp.json under it.
+  fs.writeFileSync(path.join(d, '.gitignore'), 'node_modules\n*.json\n')
+  run(SCRIPTS.playbook, d)
+  let ignored = true
+  try {
+    execFileSync('git', ['check-ignore', '-q', '--', '.mcp.json'], { cwd: d })
+  } catch {
+    ignored = false
+  }
+  assert.ok(!ignored, '.mcp.json still git-ignored under *.json after playbook')
+})
+
 check('playbook: no real-looking secret in any produced file', () => {
   const d = tmp()
   run(SCRIPTS.playbook, d)

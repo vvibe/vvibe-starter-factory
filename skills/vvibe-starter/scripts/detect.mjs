@@ -115,12 +115,16 @@ const committedEnv = exists('.env') // a real .env present in the tree is a red 
 // strings and will REJECT the starter's onboarding artifacts (.mcp.json,
 // VVIBE_STARTER.md, provider env names) until reconciled. Flag it so the agent
 // reconciles before publish (see references/qa-verify.md). Read-only.
-const guardScripts = Object.entries(pkg.scripts || {})
-  .filter(([k, v]) => /neutral|integrat|guard|provider/i.test(k) || /neutral|integrat|provider/i.test(String(v)))
-  .map(([k]) => `npm run ${k}`)
+// Detect by CONTENT, not script name — a name regex flags unrelated scripts
+// (integration-test, type-guard-check, cloud-provider-setup). A real guard scans
+// product code for provider/ban terms, so confirm that signature in the file body.
+const GUARD_SIG = /neutral|provider[- ]?(neutral|code|name)|forbidden|banned|check.?integrations|product code/i
 const guardFiles = listDir('scripts')
-  .filter((f) => /integrat|neutral|guard/i.test(f) && /\.(mjs|cjs|js|ts)$/.test(f))
+  .filter((f) => /\.(mjs|cjs|js|ts)$/.test(f) && GUARD_SIG.test(read(`scripts/${f}`)))
   .map((f) => `scripts/${f}`)
+const guardScripts = Object.entries(pkg.scripts || {})
+  .filter(([, v]) => guardFiles.some((gf) => String(v).includes(gf) || String(v).includes(path.basename(gf))))
+  .map(([k]) => `npm run ${k}`)
 const guardHits = [...new Set([...guardScripts, ...guardFiles])]
 const hasNeutralityGuard = guardHits.length > 0
 

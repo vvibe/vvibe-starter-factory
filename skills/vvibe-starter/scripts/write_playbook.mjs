@@ -7,6 +7,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { execSync } from 'node:child_process'
 
 const root = path.resolve(process.argv[2] || process.cwd())
 const write = (file, body) => {
@@ -196,12 +197,37 @@ function ensureEnvIgnored() {
 function ensureMcpTracked() {
   const abs = path.join(root, '.gitignore')
   if (!fs.existsSync(abs)) return 'no .gitignore'
-  const tracked = new Set(['.mcp.json', '/.mcp.json', '.cursor/mcp.json', '/.cursor/mcp.json'])
-  const lines = fs.readFileSync(abs, 'utf8').split(/\r?\n/)
-  const kept = lines.filter((l) => !tracked.has(l.trim()))
-  if (kept.length === lines.length) return '.mcp.json already tracked'
-  fs.writeFileSync(abs, kept.join('\n'))
-  return 'un-ignored .mcp.json / .cursor/mcp.json (forks need them)'
+  const files = ['.mcp.json', '.cursor/mcp.json'].filter((f) => fs.existsSync(path.join(root, f)))
+  const exact = new Set(['.mcp.json', '/.mcp.json', '.cursor/mcp.json', '/.cursor/mcp.json'])
+  // 1) Strip exact ignore lines — the common case, works without git.
+  const orig = fs.readFileSync(abs, 'utf8').split(/\r?\n/)
+  const kept = orig.filter((l) => !exact.has(l.trim()))
+  let changed = kept.length !== orig.length
+  if (changed) fs.writeFileSync(abs, kept.join('\n'))
+  // 2) Broader patterns (`*.json`, `.cursor/`, `**/mcp.json`) still hide the files and a
+  //    literal-line strip misses them. Ask git's OWN ignore engine, then re-include via
+  //    negation. A file under an ignored *directory* can't be re-included by git — detect
+  //    and warn rather than pretend it's fixed.
+  const stillIgnored = (rel) => {
+    try {
+      execSync(`git check-ignore -q -- "${rel}"`, { cwd: root, stdio: 'pipe' })
+      return true
+    } catch {
+      return false // not ignored, or not a git repo
+    }
+  }
+  const negate = files.filter(stillIgnored)
+  if (negate.length) {
+    let body = fs.readFileSync(abs, 'utf8')
+    if (body && !body.endsWith('\n')) body += '\n'
+    body += `\n# vvibe: forks must receive the MCP config (override broader ignore rules)\n${negate.map((f) => `!/${f}`).join('\n')}\n`
+    fs.writeFileSync(abs, body)
+    changed = true
+    const unfixable = negate.filter(stillIgnored) // parent dir excluded → git can't re-include
+    if (unfixable.length)
+      return `WARNING: ${unfixable.join(', ')} still git-ignored (a parent dir is excluded) — un-ignore manually`
+  }
+  return changed ? 'un-ignored .mcp.json / .cursor/mcp.json (forks need them)' : '.mcp.json already tracked'
 }
 
 // ── merge (don't clobber) into a real base app's existing templates ─────────
