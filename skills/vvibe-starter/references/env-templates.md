@@ -44,10 +44,10 @@ starter's `.gitignore` is missing it).
 ## `.mcp.json` (tokenless OAuth)
 
 A project-level MCP config pre-pointed at the VVibe cloud MCP server with **no
-token**. On first use the agent gets a 401, discovers the authorization server, and
-opens a browser where the forker signs up or logs in **once** — that single login
-provisions their account and authorizes the agent. Nothing to paste, no secret in
-the committed file:
+token**. In a harness that drives MCP's own OAuth handshake (e.g. Claude Code), the
+agent's first call gets a 401, discovers the authorization server, and opens a browser
+where the forker signs up or logs in **once** — that single login provisions their
+account and authorizes the agent. Nothing to paste, no secret in the committed file:
 
 ```json
 {
@@ -61,6 +61,13 @@ the committed file:
 ```
 
 Notes:
+- **Headless, or want one command that works everywhere:** run
+  `npx @vvibe/cli login --server=https://mcp.vvibe.ai`. It doesn't depend on the
+  harness's own 401/OAuth discovery — it drives the login itself (opens a browser and
+  also prints the URL, so a headless agent can hand it to a human), then writes the
+  resulting long-lived credential straight into the MCP config for whichever client is
+  running (Claude Code, Cursor, Codex), `Authorization` header included. This is the
+  recommended path for Cursor/Codex and for any non-interactive session.
 - **Legacy Portaly MCP is reconciled out.** VVibe is the canonical (and only) MCP this
   starter wires. If the base app already configured a *standalone* Portaly MCP
   (`@portaly-ai/portaly-mcp`, an `mcp_ptly_…` `PORTALY_API_TOKEN`, usually keyed
