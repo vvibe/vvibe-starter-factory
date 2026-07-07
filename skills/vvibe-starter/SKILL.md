@@ -1,8 +1,8 @@
 ---
 name: vvibe-starter
-version: 0.1.2
+version: 0.2.0
 manifest_version: 1
-description: Turn any web app into a vvibe-optimized starter — pre-install the vvibe + Portaly skill catalogs, wire a real working showcase integration (GA4 analytics + a TWD Portaly checkout), mark the repo vvibe-optimized, and embed a registration + InsForge-deploy playbook the downstream user's agent will run. Trigger when someone wants to vvibe-optimize an app, add vvibe + Portaly to a project, run the starter factory, or (for the VVibe team) produce an official starter. Works across agents (Claude Code, Codex, etc.).
+description: Turn any web app into a vvibe-optimized starter — pre-install the vvibe + Portaly skill catalogs, wire a real working showcase integration (GA4 analytics + a TWD Portaly checkout), mark the repo vvibe-optimized, and embed a registration (via `npx @vvibe/cli login`, works headless) + InsForge-deploy playbook the downstream user's agent will run. Trigger when someone wants to vvibe-optimize an app, add vvibe + Portaly to a project, run the starter factory, or (for the VVibe team) produce an official starter. Works across agents (Claude Code, Codex, etc.).
 ---
 
 # VVibe Starter Factory — Router
@@ -88,12 +88,15 @@ agents to operate the business via them and run the forker playbook. Idempotent.
 Run `node <skill-dir>/scripts/write_playbook.mjs <base-app-dir>`. It writes into the
 starter: `VVIBE_STARTER.md` (the forker playbook), `.env.example` (vvibe + Portaly
 placeholders), and `.mcp.json` (placeholder MCP server entry — **no real token**).
-The playbook walks the forker's agent through: register VVibe at https://vvibe.ai →
-connection token **or** `VVIBE_API_KEY` → register Portaly at
-https://portaly.cc/payment → `PORTALY_API_KEY` + callback secret
-→ run operational skills to provision remote resources → **deploy to InsForge**
-(vvibe's hosting partner; register at https://insforge.dev/auth/sign-up?ref=VVIBE). It
-states plainly *why* registration is a web flow (MCP can't register).
+The playbook walks the forker's agent through: connect VVibe by running
+`npx @vvibe/cli login --server=https://mcp.vvibe.ai` (works in any session, including
+headless — one browser click from the human) **or**, if nobody's available, a REST
+`VVIBE_API_KEY` → register Portaly at https://portaly.cc/payment →
+`PORTALY_API_KEY` + callback secret → run operational skills to provision remote
+resources → **deploy to InsForge** (vvibe's hosting partner; register at
+https://insforge.dev/auth/sign-up?ref=VVIBE). It states plainly that account
+signup/login is still a one-time human web step even though the CLI drives everything
+else.
 
 ### F — QA before publish  →  `references/qa-verify.md`
 Build the starter and **reconcile any base-app neutrality guard** flagged in phase A so
