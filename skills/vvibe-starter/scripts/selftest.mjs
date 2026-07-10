@@ -235,6 +235,28 @@ check('marker: product-only stack names portaly-product, not portaly-payment', (
   assert.ok(!m.includes('register the `portaly-payment`'), 'product-only marker must not tell the user to register portaly-payment')
 })
 
+// POR-4268: skill registration must resolve the skillId via vibe_list_skills, never
+// pass the folder name (`vvibe-analytics` → `-32602`), and must not claim Portaly is
+// registered through VVibe. Guards both generators against regressing to the buggy text.
+check('marker: registers skills via vibe_list_skills, not the folder name; no Portaly-via-VVibe claim', () => {
+  const d = tmp()
+  seedSkills(d, ['vvibe-analytics', 'portaly-payment'])
+  run(SCRIPTS.marker, d)
+  const m = read(d, 'AGENTS.md')
+  assert.ok(m.includes('vibe_list_skills'), 'must resolve skillIds via vibe_list_skills')
+  assert.ok(m.includes('-32602'), 'should warn the folder name is rejected (-32602)')
+  assert.ok(/not (a VVibe skill|registered through VVibe)/.test(m), 'Portaly must not be framed as VVibe-registered')
+  assert.ok(!/register(ing)? the `portaly-payment`/.test(m), 'must not tell the agent to register a Portaly skill via VVibe')
+})
+
+check('playbook: registers skills via vibe_list_skills, not the folder name', () => {
+  const d = tmp()
+  run(SCRIPTS.playbook, d)
+  const p = read(d, 'VVIBE_STARTER.md')
+  assert.ok(p.includes('vibe_list_skills'), 'playbook must resolve skillIds via vibe_list_skills')
+  assert.ok(p.includes('-32602'), 'playbook should warn the folder name is rejected (-32602)')
+})
+
 // ── detect is read-only ────────────────────────────────────────────────────
 check('detect: read-only (leaves the dir untouched)', () => {
   const d = tmp()
@@ -269,7 +291,7 @@ const SYNC = [
     label: 'playbook script <-> forker-playbook.md',
     a: 'playbook',
     b: 'forkerRef',
-    strings: ['## 1. Connect VVibe', '## 2. Register Portaly Payment', '## 3. Provision', '## 4. Make it yours', '## 5. Deploy to InsForge', '## Cheat sheet', 'insforge.dev/auth/sign-up?ref=VVIBE', 'npx @vvibe/cli login', 'vibe_update_brand', 'vibe_get_brand'],
+    strings: ['## 1. Connect VVibe', '## 2. Register Portaly Payment', '## 3. Provision', '## 4. Make it yours', '## 5. Deploy to InsForge', '## Cheat sheet', 'insforge.dev/auth/sign-up?ref=VVIBE', 'npx @vvibe/cli login', 'vibe_update_brand', 'vibe_get_brand', 'vibe_list_skills'],
   },
   {
     label: 'env template <-> env-templates.md',
@@ -281,7 +303,7 @@ const SYNC = [
     label: 'marker block <-> optimized-marker.md',
     a: 'marker',
     b: 'markerRef',
-    strings: ['vvibe-optimized', 'recommended host + backend', 'insforge.dev/auth/sign-up?ref=VVIBE', 'Connecting VVibe', 'npx @vvibe/cli login', 'vibe_update_brand', 'vibe_get_brand'],
+    strings: ['vvibe-optimized', 'recommended host + backend', 'insforge.dev/auth/sign-up?ref=VVIBE', 'Connecting VVibe', 'npx @vvibe/cli login', 'vibe_update_brand', 'vibe_get_brand', 'vibe_list_skills'],
   },
 ]
 for (const s of SYNC)
