@@ -37,7 +37,8 @@ const installed = [
 
 const DESC = {
   'vvibe-analytics': 'GA4 + VVibe event tracking, connect analytics to the dashboard',
-  'vvibe-member': 'sync app users to VVibe',
+  'vvibe-member':
+    'tell VVibe when someone signs up (ref codes, welcome email, attribution)',
   'vvibe-email': 'invitation emails + waitlist landing',
   'vvibe-product-brain': 'teach VVibe about this product (feeds the prose skills)',
   'vvibe-blog-writer': 'SEO blog: draft articles from the Product Brain',

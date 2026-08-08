@@ -218,6 +218,42 @@ check('marker: honest — no "payments" claim, only vendored skills listed, with
   assert.ok(!m.includes('`portaly-payment`'), 'must not list a skill that was not vendored')
 })
 
+check('marker: skill descriptions match references/optimized-marker.md', () => {
+  // The reference doc shows what the generated block looks like, so a skill
+  // whose description changes in one place and not the other silently ships a
+  // lie — regenerating the marker would overwrite the doc's version. Compare
+  // the ACTUAL generated lines, not the DESC constant, so this also catches a
+  // formatting change. The doc folds blog-writer/render into one line; that
+  // shape has two backticked names so the single-skill regex skips it.
+  const d = tmp()
+  const skills = [
+    'vvibe-analytics',
+    'vvibe-member',
+    'vvibe-email',
+    'vvibe-product-brain',
+    'vvibe-sentry',
+  ]
+  seedSkills(d, skills)
+  run(SCRIPTS.marker, d)
+
+  const generated = new Map()
+  for (const line of read(d, 'AGENTS.md').split('\n')) {
+    const m = line.match(/^- `([a-z-]+)` — (.+)$/)
+    if (m) generated.set(m[1], m[2].trim())
+  }
+
+  const doc = slurp(path.join(refs, 'optimized-marker.md'))
+  for (const skill of skills) {
+    const desc = generated.get(skill)
+    assert.ok(desc, `marker did not emit a description for ${skill}`)
+    assert.ok(
+      doc.includes(`\`${skill}\` — ${desc}`),
+      `optimized-marker.md is out of sync with write_marker.mjs for ${skill}:\n` +
+        `       generator says: ${desc}`,
+    )
+  }
+})
+
 check('marker: claims payments once a portaly skill is vendored', () => {
   const d = tmp()
   seedSkills(d, ['vvibe-analytics', 'portaly-payment'])
