@@ -236,20 +236,34 @@ check('marker: skill descriptions match references/optimized-marker.md', () => {
   seedSkills(d, skills)
   run(SCRIPTS.marker, d)
 
-  const generated = new Map()
-  for (const line of read(d, 'AGENTS.md').split('\n')) {
-    const m = line.match(/^- `([a-z-]+)` — (.+)$/)
-    if (m) generated.set(m[1], m[2].trim())
+  // Both sides are parsed into maps keyed by skill and compared exactly. A
+  // substring search over the whole doc would pass while a stale line is still
+  // sitting there, as long as a correct line had been added beside it — which
+  // is the likely shape of a botched edit, so it is the case worth catching.
+  const skillLines = (text, source) => {
+    const found = new Map()
+    for (const line of text.split('\n')) {
+      const m = line.match(/^- `([a-z-]+)` — (.+)$/)
+      if (!m) continue
+      assert.ok(!found.has(m[1]), `${source} lists ${m[1]} twice`)
+      found.set(m[1], m[2].trim())
+    }
+    return found
   }
 
-  const doc = slurp(path.join(refs, 'optimized-marker.md'))
+  const generated = skillLines(read(d, 'AGENTS.md'), 'the generated marker')
+  const referenced = skillLines(
+    slurp(path.join(refs, 'optimized-marker.md')),
+    'optimized-marker.md',
+  )
+
   for (const skill of skills) {
     const desc = generated.get(skill)
     assert.ok(desc, `marker did not emit a description for ${skill}`)
-    assert.ok(
-      doc.includes(`\`${skill}\` — ${desc}`),
-      `optimized-marker.md is out of sync with write_marker.mjs for ${skill}:\n` +
-        `       generator says: ${desc}`,
+    assert.equal(
+      referenced.get(skill),
+      desc,
+      `optimized-marker.md is out of sync with write_marker.mjs for ${skill}`,
     )
   }
 })
