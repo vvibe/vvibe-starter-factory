@@ -218,6 +218,56 @@ check('marker: honest — no "payments" claim, only vendored skills listed, with
   assert.ok(!m.includes('`portaly-payment`'), 'must not list a skill that was not vendored')
 })
 
+check('marker: skill descriptions match references/optimized-marker.md', () => {
+  // The reference doc shows what the generated block looks like, so a skill
+  // whose description changes in one place and not the other silently ships a
+  // lie — regenerating the marker would overwrite the doc's version. Compare
+  // the ACTUAL generated lines, not the DESC constant, so this also catches a
+  // formatting change. The doc folds blog-writer/render into one line; that
+  // shape has two backticked names so the single-skill regex skips it.
+  const d = tmp()
+  const skills = [
+    'vvibe-analytics',
+    'vvibe-member',
+    'vvibe-email',
+    'vvibe-product-brain',
+    'vvibe-sentry',
+  ]
+  seedSkills(d, skills)
+  run(SCRIPTS.marker, d)
+
+  // Both sides are parsed into maps keyed by skill and compared exactly. A
+  // substring search over the whole doc would pass while a stale line is still
+  // sitting there, as long as a correct line had been added beside it — which
+  // is the likely shape of a botched edit, so it is the case worth catching.
+  const skillLines = (text, source) => {
+    const found = new Map()
+    for (const line of text.split('\n')) {
+      const m = line.match(/^- `([a-z-]+)` — (.+)$/)
+      if (!m) continue
+      assert.ok(!found.has(m[1]), `${source} lists ${m[1]} twice`)
+      found.set(m[1], m[2].trim())
+    }
+    return found
+  }
+
+  const generated = skillLines(read(d, 'AGENTS.md'), 'the generated marker')
+  const referenced = skillLines(
+    slurp(path.join(refs, 'optimized-marker.md')),
+    'optimized-marker.md',
+  )
+
+  for (const skill of skills) {
+    const desc = generated.get(skill)
+    assert.ok(desc, `marker did not emit a description for ${skill}`)
+    assert.equal(
+      referenced.get(skill),
+      desc,
+      `optimized-marker.md is out of sync with write_marker.mjs for ${skill}`,
+    )
+  }
+})
+
 check('marker: claims payments once a portaly skill is vendored', () => {
   const d = tmp()
   seedSkills(d, ['vvibe-analytics', 'portaly-payment'])

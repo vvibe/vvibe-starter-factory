@@ -66,7 +66,7 @@ If you're an AI agent working in this repo, you can operate the creator's busine
 
 **Pre-installed skills** (in `.claude/skills/` and `.agents/skills/`):
 - `vvibe-analytics` — GA4 + VVibe event tracking, connect analytics to the dashboard
-- `vvibe-member` — sync app users to VVibe
+- `vvibe-member` — tell VVibe when someone signs up (ref codes, welcome email, attribution)
 - `vvibe-email` — invitation emails + waitlist landing
 - `vvibe-product-brain` — teach VVibe about this product (feeds the prose skills)
 - `vvibe-blog-writer` / `vvibe-blog-render` — SEO blog: draft + render
